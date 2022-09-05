@@ -265,7 +265,7 @@ def matchesPatterns(path: str) -> bool:
     """
     try:
         for pattern in patternsSeen:
-            if re.search(pattern, path):
+            if re.search(re.escape(pattern), path):
                 return True
         return False
     except Exception as e:

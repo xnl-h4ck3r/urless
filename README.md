@@ -1,6 +1,6 @@
 <center><img src="https://github.com/xnl-h4ck3r/urless/raw/main/title.png"></center>
 
-## About - v0.1
+## About - v0.2
 
 This is a tool used to de-clutter a list of URLs.
 As a starting point, I took the amazing tool [uro](https://github.com/s0md3v/uro/) by Somdev Sangwan. But I wanted to change a few things, make some improvements (like deal with GUIDs) and make it more customisable.
