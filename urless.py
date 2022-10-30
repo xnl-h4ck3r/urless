@@ -358,6 +358,9 @@ def processUrl(line):
         elif params and compareParams(urlmap[host][path], params):
             urlmap[host][path].append(params)
     
+    except ValueError as ve:
+        if verbose():
+            writerr(colored('This URL caused a Value Error and was not included: ' + line, 'red'))
     except Exception as e:
         writerr(colored('ERROR processUrl 1: ' + str(e), 'red'))
         

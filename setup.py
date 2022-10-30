@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 setup(
     name="urless",
     packages=find_packages(),
-    version="0.1",
+    version=__import__('urless').__version__,
     description="De-clutter a list of URLs",
     long_description=open("README.md").read(),
     author="@xnl-h4ck3r",
