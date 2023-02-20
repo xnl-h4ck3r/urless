@@ -1,6 +1,6 @@
 <center><img src="https://github.com/xnl-h4ck3r/urless/blob/main/urless/images/title.png"></center>
 
-## About - v0.3
+## About - v0.4
 
 This is a tool used to de-clutter a list of URLs.
 As a starting point, I took the amazing tool [uro](https://github.com/s0md3v/uro/) by Somdev Sangwan. But I wanted to change a few things, make some improvements (like deal with GUIDs) and make it more customisable.
@@ -102,3 +102,6 @@ Good luck and good hunting!
 If you really love the tool (or any others), or they helped you find an awesome bounty, consider [BUYING ME A COFFEE!](https://ko-fi.com/xnlh4ck3r) ☕ (I could use the caffeine!)
 
 🤘 /XNL-h4ck3r
+
+<p>
+<a href='https://ko-fi.com/B0B3CZKR5' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi2.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>

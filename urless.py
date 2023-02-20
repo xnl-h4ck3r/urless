@@ -27,16 +27,18 @@ FILTER_KEYWORDS = ''
 # Regex for a path folder of integer
 REGEX_INTEGER = '\d+'
 reIntPart = re.compile(REGEX_INTEGER)
-reInt = re.compile(r'/'+REGEX_INTEGER+'([?/]|$)')
+reInt = re.compile(r'\/'+REGEX_INTEGER+'([?\/]|$)')
 
 # Regex for a path folder of GUID
 REGEX_GUID = '[({]?[a-fA-F0-9]{8}[-]?([a-fA-F0-9]{4}[-]?){3}[a-fA-F0-9]{12}[})]?'
 reGuidPart = re.compile(REGEX_GUID)
-reGuid = re.compile(r'/'+REGEX_GUID+'([?/]|$)')
+reGuid = re.compile(r'\/'+REGEX_GUID+'([?\/]|$)')
 
 # Regex for path of YYYY/MM
-REGEX_YYYYMM = '/[1|2][0|1|9]\d{2}/[0|1]\d{1}/'
+REGEX_YYYYMM = '\/[1|2][0|1|9]\\d{2}/[0|1]\\d{1}\/'
 reYYYYMM = re.compile(REGEX_YYYYMM)
+
+REGEX_END = '(\/?)$'
 
 # Global variables
 args = None
@@ -49,9 +51,9 @@ linesOrigCount = 0
 linesFinalCount = 0
 
 def verbose():
-    """
+    '''
     Functions used when printing messages dependant on verbose option
-    """
+    '''
     return args.verbose
 
 def write(text='',pipe=False):
@@ -69,18 +71,18 @@ def writerr(text=''):
         sys.stderr.write(text+'\n')
             
 def showBanner():
-    write("")
-    write(colored("  __  _ ____  _   ___  ___ ____ ", "red"))
-    write(colored(" | | | |  _ \| | / _ \/ __/ __/ ", "yellow"))
-    write(colored(" | | | | |_) | ||  __/\__ \__ \ ", "green"))
-    write(colored(" | |_| |  _ <| |_\___/\___/___/ ", "cyan"))
-    write(colored("  \___/|_| \_\___/", "magenta")+colored("by Xnl-h4ck3r","white"))
-    write("")
+    write('')
+    write(colored('  __  _ ____  _   ___  ___ ____ ', 'red'))
+    write(colored(' | | | |  _ \| | / _ \/ __/ __/ ', 'yellow'))
+    write(colored(' | | | | |_) | ||  __/\__ \__ \ ', 'green'))
+    write(colored(' | |_| |  _ <| |_\___/\___/___/ ', 'cyan'))
+    write(colored('  \___/|_| \_\___/', 'magenta')+colored('by Xnl-h4ck3r','white'))
+    write('')
 
 def getConfig():
-    """
+    '''
     Try to get the values from the config file, otherwise use the defaults
-    """
+    '''
     global FILTER_EXTENSIONS, FILTER_KEYWORDS
     try:
 
@@ -103,10 +105,10 @@ def getConfig():
                 try:
                     FILTER_KEYWORDS = config.get('FILTER_KEYWORDS')
                     if str(FILTER_KEYWORDS) == 'None':
-                        writerr(colored('No value for "FILTER_KEYWORDS" in config.yml - default set', 'yellow'))
+                        writerr(colored('No value for FILTER_KEYWORDS in config.yml - default set', 'yellow'))
                         FILTER_KEYWORDS = ''
                 except Exception as e:
-                    writerr(colored('Unable to read "FILTER_EXTENSIONS" from config.yml - default set', 'red'))
+                    writerr(colored('Unable to read FILTER_EXTENSIONS from config.yml - default set', 'red'))
                     FILTER_KEYWORDS = DEFAULT_FILTER_KEYWORDS
             
             # If the user provided the --filter-extensions argument then it overrides the config value
@@ -116,10 +118,10 @@ def getConfig():
                 try:
                     FILTER_EXTENSIONS = config.get('FILTER_EXTENSIONS')
                     if str(FILTER_EXTENSIONS) == 'None':
-                        writerr(colored('No value for "FILTER_EXTENSIONS" in config.yml - default set', 'yellow'))
+                        writerr(colored('No value for FILTER_EXTENSIONS in config.yml - default set', 'yellow'))
                         FILTER_EXTENSIONS = ''
                 except Exception as e:
-                    writerr(colored('Unable to read "FILTER_EXTENSIONS" from config.yml - default set', 'red'))
+                    writerr(colored('Unable to read FILTER_EXTENSIONS from config.yml - default set', 'red'))
                     FILTER_EXTENSIONS = DEFAULT_FILTER_EXTENSIONS
                     
         except:
@@ -131,24 +133,24 @@ def getConfig():
         writerr(colored('ERROR getConfig 1: ' + str(e), 'red'))
 
 def handler(signal_received, frame):
-    """
+    '''
     This function is called if Ctrl-C is called by the user
     An attempt will be made to try and clean up properly
-    """
-    writerr(colored('>>> "Oh my God, they killed Kenny... and urless!" - Kyle', "red"))
+    '''
+    writerr(colored('>>> "Oh my God, they killed Kenny... and urless!" - Kyle', 'red'))
     sys.exit()
                         
 def paramsToDict(params: str) -> list:
-    """
+    '''
     converts query string to dict
-    """
+    '''
     try:
         the_dict = {}
         if params:
             for pair in params.split('&'):
                 # If there is a parameter but no = then add a value of {EMPTY}
                 if pair.find('=') < 0:
-                    key = pair+"{EMPTY}"
+                    key = pair+'{EMPTY}'
                     the_dict[key] = '{EMPTY}'
                 else:
                     parts = pair.split('=')
@@ -161,24 +163,29 @@ def paramsToDict(params: str) -> list:
         writerr(colored('ERROR paramsToDict 1: ' + str(e), 'red'))
 
 def dictToParams(params: dict) -> str:
-    """
+    '''
     converts dict of params to query string
-    """
+    '''
     try:
         # If a parameter has a value of {EMPTY} then just the name will be written and no =
         stringed = [name if value == '{EMPTY}' else name + '=' + value for name, value in params.items()]
-        paramString = '?' + '&'.join(stringed)
-        
+
+        # Only add a ? at the start of parameters, unless the first starts with #
+        if list(params.keys())[0][:1] == '#':
+            paramString = ''.join(stringed)
+        else:
+            paramString = '?' + '&'.join(stringed)
+
         # If a there are any parameters with {EMPTY} in the name then remove the string
-        return paramString.replace("{EMPTY}","")
+        return paramString.replace('{EMPTY}','')
     except Exception as e:
         writerr(colored('ERROR dictToParams 1: ' + str(e), 'red'))
 
 def compareParams(currentParams: list, newParams: dict) -> bool:
-    """
+    '''
     checks if newParams contain a param
     that doesn't exist in currentParams
-    """
+    '''
     try:
         ogSet = set([])
         for each in currentParams:
@@ -189,14 +196,14 @@ def compareParams(currentParams: list, newParams: dict) -> bool:
         writerr(colored('ERROR compareParams 1: ' + str(e), 'red'))
         
 def isUnwantedContent(path: str) -> bool:
-    """
+    '''
     checks if a path is likely to contain
     human written content e.g. a blog
-    """
+    '''
     try:
         unwanted = False
         
-        # If the path has more than 3 dashes "-" AND isn't a GUID AND (if specified) isn't a Custom ID, then assume it's human written content, e.g. blog
+        # If the path has more than 3 dashes '-' AND isn't a GUID AND (if specified) isn't a Custom ID, then assume it's human written content, e.g. blog
         for part in path.split('/'):
             if part.count('-') > 3:
                 if args.regex_custom_id == '':
@@ -215,9 +222,9 @@ def isUnwantedContent(path: str) -> bool:
         writerr(colored('ERROR isUnwantedContent 1: ' + str(e), 'red'))
 
 def createPattern(path: str) -> str:
-    """
+    '''
     creates patterns for urls with integers or GUIDs in them
-    """
+    '''
     try:
         newParts = []
         subParts = []
@@ -240,17 +247,16 @@ def createPattern(path: str) -> str:
             else:
                 newParts.append(part)
         return '/'.join(newParts)
-    
     except Exception as e:
         writerr(colored('ERROR createPattern 1: ' + str(e), 'red'))
 
 def patternExists(pattern: str) -> bool:
-    """
+    '''
     checks if a int pattern exists
-    """
+    '''
     try:
         for i, seen_pattern in enumerate(patternsSeen):
-            if pattern in seen_pattern:
+            if pattern == seen_pattern:
                 patternsSeen[i] = pattern
                 return True
             elif seen_pattern in pattern:
@@ -260,31 +266,31 @@ def patternExists(pattern: str) -> bool:
         writerr(colored('ERROR patternExists 1: ' + str(e), 'red'))
 
 def matchesPatterns(path: str) -> bool:
-    """
+    '''
     checks if the url matches any of the regex patterns
-    """
+    '''
     try:
         for pattern in patternsSeen:
-            if re.search(re.escape(pattern), path):
+            if re.search(pattern, path) is not None:
                 return True
         return False
     except Exception as e:
         writerr(colored('ERROR matchesPatterns 1: ' + str(e), 'red'))
 
 def hasFilterKeyword(path: str) -> bool:
-    """
+    '''
     checks if the url matches the blacklist regex
-    """
+    '''
     global FILTER_KEYWORDS
     try:
-        return re.search(re.escape(FILTER_KEYWORDS).replace(',','|'), path, re.IGNORECASE)
+        return re.search(FILTER_KEYWORDS.replace(',','|'), path, re.IGNORECASE)
     except Exception as e:
         writerr(colored('ERROR hasFilterKeyword 1: ' + str(e), 'red'))
 
 def hasBadExtension(path: str) -> bool:
-    """
+    '''
     checks if a url has a blacklisted extension
-    """
+    '''
     global FILTER_EXTENSIONS
     try:
         badExtension = False
@@ -344,14 +350,14 @@ def processUrl(line):
             
             # If the path contains a GUID and the pattern doesn't already exist, then add it to the dictionary of patterns seen
             if reGuidPart.search(path) and not patternExists(pattern):
-                patternsSeen.append(pattern)
+                patternsSeen.append(pattern + REGEX_END)
             # Else if the path contains an integer ID and the pattern doesn't already exist, then add it to the dictionary of patterns seen
             elif reInt.search(path) and not patternExists(pattern):
-                patternsSeen.append(pattern)
+                patternsSeen.append(pattern + REGEX_END)
             # Else if the path contains a Custom ID and the pattern doesn't already exist, then add it to the dictionary of patterns seen
             elif args.regex_custom_id != '' and reCustomIDPart.search(path) and not patternExists(pattern):
-                patternsSeen.append(pattern)
-               
+                patternsSeen.append(pattern + REGEX_END)
+            
         # Update the url map
         if path not in urlmap[host]:
             urlmap[host][path] = [params] if params else []
@@ -373,7 +379,7 @@ def processInput():
                 processUrl(line)
         else:
             try:
-                inFile = open(os.path.expanduser(args.input), "r")
+                inFile = open(os.path.expanduser(args.input), 'r')
                 lines = inFile.readlines()
                 linesOrigCount = len(lines)
                 for line in lines:
@@ -394,7 +400,7 @@ def processOutput():
         # If an output file was specified, open it
         if args.output is not None:
             try:
-                outFile = open(os.path.expanduser(args.output), "w")
+                outFile = open(os.path.expanduser(args.output), 'w')
             except Exception as e:
                 writerr(colored('ERROR processOutput 2 ' + str(e), 'red'))   
         
@@ -422,12 +428,12 @@ def processOutput():
                             write(host + path,True)
         
         if verbose() and sys.stdin.isatty():
-            writerr(colored("\nInput reduced from "+str(linesOrigCount)+" to "+str(linesFinalCount)+" lines 🤘", "cyan"))
+            writerr(colored('\nInput reduced from '+str(linesOrigCount)+' to '+str(linesFinalCount)+' lines 🤘', 'cyan'))
             
         # Close the output file if it was opened
         try:
             if args.output is not None:
-                write(colored("Output successfully written to file: ", "cyan")+colored(args.output,"white"))
+                write(colored('Output successfully written to file: ', 'cyan')+colored(args.output,'white'))
                 write()
                 outFile.close()
         except Exception as e:
@@ -439,22 +445,22 @@ def processOutput():
 def showOptionsAndConfig():
     global FILTER_EXTENSIONS, FILTER_KEYWORDS
     try:
-        write(colored("Selected options and config:", "cyan"))
-        write(colored("-i: " + args.input, "magenta")+colored(" The input file of URLs to de-clutter.","white"))
+        write(colored('Selected options and config:', 'cyan'))
+        write(colored('-i: ' + args.input, 'magenta')+colored(' The input file of URLs to de-clutter.','white'))
         if args.output is not None:
-            write(colored("-o: " + args.output, "magenta")+colored(" The output file that the de-cluttered URL list will be written to.","white"))
+            write(colored('-o: ' + args.output, 'magenta')+colored(' The output file that the de-cluttered URL list will be written to.','white'))
         else:
-            write(colored("-o: <STDOUT>", "magenta")+colored(" An output file wasn't given, so output will be written to STDOUT.","white"))
+            write(colored('-o: <STDOUT>', 'magenta')+colored(' An output file wasn\'t given, so output will be written to STDOUT.','white'))
             
         if args.filter_keywords:
-            write(colored("-fk (Keywords to Filter): ", "magenta")+colored(args.filter_keywords,"white"))
+            write(colored('-fk (Keywords to Filter): ', 'magenta')+colored(args.filter_keywords,'white'))
         else:
-            write(colored("Filter Keywords (from Config.yml): ", "magenta")+colored(FILTER_KEYWORDS,"white"))
+            write(colored('Filter Keywords (from Config.yml): ', 'magenta')+colored(FILTER_KEYWORDS,'white'))
         
         if args.filter_extensions:
-            write(colored("-fe (Extensions to Filter): ", "magenta")+colored(args.filter_extensions,"white"))
+            write(colored('-fe (Extensions to Filter): ', 'magenta')+colored(args.filter_extensions,'white'))
         else:
-            write(colored("Filter Extensions (from Config.yml): ", "magenta")+colored(FILTER_EXTENSIONS,"white"))
+            write(colored('Filter Extensions (from Config.yml): ', 'magenta')+colored(FILTER_EXTENSIONS,'white'))
         
         write()
         
@@ -470,7 +476,7 @@ def argCheckRegexCustomID(value):
         return value
     except:
         raise argparse.ArgumentTypeError(
-            "Valid regex must be passed."
+            'Valid regex must be passed.'
         )
                         
 def main():
@@ -519,14 +525,14 @@ def main():
         metavar='REGEX',
         type=argCheckRegexCustomID
     )
-    parser.add_argument('-v', '--verbose', action='store_true', help="Verbose output.")
+    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output.')
     args = parser.parse_args()
 
     try:
         # If no input was given, raise an error
         if sys.stdin.isatty():
             if args.input is None:
-                writerr(colored("You need to provide an input with -i argument or through <stdin>.", "red"))
+                writerr(colored('You need to provide an input with -i argument or through <stdin>.', 'red'))
                 sys.exit()
 
         # Get the config settings from the config.yml file

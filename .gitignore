@@ -2,3 +2,4 @@ build/
 dist/
 urless.egg-info
 __pycache__
+test.txt
