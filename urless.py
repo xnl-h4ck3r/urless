@@ -316,8 +316,10 @@ def processUrl(line):
             host = scheme + '://' + parsed.netloc
             
         # If the link specifies port 80 or 443, e.g. http://example.com:80, then remove the port
-        if host.find(':80') or host.fnd(':443'):
-            host = host.replace(':80','').replace(':443','')
+        if str(parsed.port) == '80':
+            host = host.replace(':80','',1)
+        if str(parsed.port) == '443':
+            host = host.replace(':443','',1)
             
         # Build the path and parameters
         path, params = parsed.path, paramsToDict(parsed.query)

@@ -1,5 +1,11 @@
 ## Changelog
 
+- v0.5
+
+  - Changed
+
+    - Fixed Github Issue #3 to remove port 80 and 443 correctly
+
 - v0.4
 
   - Changed
