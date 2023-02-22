@@ -1,6 +1,6 @@
 <center><img src="https://github.com/xnl-h4ck3r/urless/blob/main/urless/images/title.png"></center>
 
-## About - v0.4
+## About - v0.6
 
 This is a tool used to de-clutter a list of URLs.
 As a starting point, I took the amazing tool [uro](https://github.com/s0md3v/uro/) by Somdev Sangwan. But I wanted to change a few things, make some improvements (like deal with GUIDs) and make it more customisable.
@@ -30,6 +30,7 @@ $ source ~/.bashrc
 | -o  | --output            | The output file that will contain the de-cluttered list of URLs (default: output.txt). If piped to another program, output will be written to STDOUT instead. |
 | -fk | --filter-keywords   | A comma separated list of keywords to exclude links (if there no parameters). This will override the `FILTER_KEYWORDS` list specified in config.yml           |
 | -fe | --filter-extensions | A comma separated list of file extensions to exclude. This will override the `FILTER_EXTENSIONS` list specified in `config.yml`                               |
+| -ks | --keep-slash        | A trailing slash at the end of a URL in input will not be removed. Therefore there may be identical URLs output, one with and one without a trailing slash.   |
 | -v  | --verbose           | Verbose output                                                                                                                                                |
 
 ## What does it do exactly?

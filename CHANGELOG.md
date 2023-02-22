@@ -1,5 +1,12 @@
 ## Changelog
 
+- v0.6
+
+  - New
+
+    - By default, a trailing `/` will be removed from the end of a URL.
+    - Added new argument `-ks`/`--keep-slash` that will ensure any links that do have a trailing slash in the input will not have the slash removed in the output, and therefore there may be identical URLs output, one with and one without a trailing slash.
+
 - v0.5
 
   - Changed

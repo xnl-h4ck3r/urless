@@ -372,20 +372,36 @@ def processUrl(line):
     except Exception as e:
         writerr(colored('ERROR processUrl 1: ' + str(e), 'red'))
         
+def processLine(line):
+    '''
+    Process a line from the input based on whether the -ks / --keep-slash argument was passed 
+    '''
+    # If the -ks / --keep-slash argument was passed, then just add all URLs, 
+    # else remove the trailing slash form any URLs (before any query string)
+    if args.keep_slash:
+        line = line.rstrip('\n')
+    else:
+        print("LINE: "+line)
+        if line.find('/?') > 0:
+            line = line.replace('/?','?',1)
+        else:
+            line = line.rstrip('\n').rstrip('/')
+    return line
+                            
 def processInput():
     
     global linesOrigCount
     try:
         if not sys.stdin.isatty():
             for line in sys.stdin:
-                processUrl(line)
+                processUrl(processLine(line))
         else:
             try:
                 inFile = open(os.path.expanduser(args.input), 'r')
                 lines = inFile.readlines()
                 linesOrigCount = len(lines)
                 for line in lines:
-                    processUrl(line.rstrip('\n'))
+                    processUrl(processLine(line))
             except Exception as e:
                 writerr(colored('ERROR processInput 2 ' + str(e), 'red'))    
             
@@ -464,6 +480,9 @@ def showOptionsAndConfig():
         else:
             write(colored('Filter Extensions (from Config.yml): ', 'magenta')+colored(FILTER_EXTENSIONS,'white'))
         
+        if args.keep_slash:
+            write(colored('-ks: True', 'magenta')+colored('A trailing slash at the end of a URL in input will not be removed. Therefore there may be identical URLs output, one with and one without a trailing slash.','white'))
+            
         write()
         
     except Exception as e:
@@ -517,6 +536,12 @@ def main():
         action='store',
         help='A comma separated list of file extensions to exclude. This will override the FILTER_EXTENSIONS list specified in config.yml',
         metavar='<comma separated list>'
+    )
+    parser.add_argument(
+        '-ks',
+        '--keep-slash',
+        action='store_true',
+        help='A trailing slash at the end of a URL in input will not be removed. Therefore there may be identical URLs output, one with and one without a trailing slash.',
     )
     parser.add_argument(
         '-rcid',
