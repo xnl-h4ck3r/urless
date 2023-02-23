@@ -381,7 +381,6 @@ def processLine(line):
     if args.keep_slash:
         line = line.rstrip('\n')
     else:
-        print("LINE: "+line)
         if line.find('/?') > 0:
             line = line.replace('/?','?',1)
         else:
