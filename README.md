@@ -1,6 +1,6 @@
 <center><img src="https://github.com/xnl-h4ck3r/urless/blob/main/urless/images/title.png"></center>
 
-## About - v0.6
+## About - v0.7
 
 This is a tool used to de-clutter a list of URLs.
 As a starting point, I took the amazing tool [uro](https://github.com/s0md3v/uro/) by Somdev Sangwan. But I wanted to change a few things, make some improvements (like deal with GUIDs) and make it more customisable.
@@ -24,14 +24,19 @@ $ source ~/.bashrc
 
 ## Usage
 
-| Arg | Long Arg            | Description                                                                                                                                                   |
-| --- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| -i  | --input             | A file of URLs to de-clutter.                                                                                                                                 |
-| -o  | --output            | The output file that will contain the de-cluttered list of URLs (default: output.txt). If piped to another program, output will be written to STDOUT instead. |
-| -fk | --filter-keywords   | A comma separated list of keywords to exclude links (if there no parameters). This will override the `FILTER_KEYWORDS` list specified in config.yml           |
-| -fe | --filter-extensions | A comma separated list of file extensions to exclude. This will override the `FILTER_EXTENSIONS` list specified in `config.yml`                               |
-| -ks | --keep-slash        | A trailing slash at the end of a URL in input will not be removed. Therefore there may be identical URLs output, one with and one without a trailing slash.   |
-| -v  | --verbose           | Verbose output                                                                                                                                                |
+| Argument | Long Argument        | Description                                                                                                                                                                                                                      |
+| -------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| -i       | --input              | A file of URLs to de-clutter.                                                                                                                                                                                                    |
+| -o       | --output             | The output file that will contain the de-cluttered list of URLs (default: output.txt). If piped to another program, output will be written to STDOUT instead.                                                                    |
+| -fk      | --filter-keywords    | A comma separated list of keywords to exclude links (if there no parameters). This will override the `FILTER_KEYWORDS` list specified in config.yml                                                                              |
+| -fe      | --filter-extensions  | A comma separated list of file extensions to exclude. This will override the `FILTER_EXTENSIONS` list specified in `config.yml`                                                                                                  |
+| -ks      | --keep-slash         | A trailing slash at the end of a URL in input will not be removed. Therefore there may be identical URLs output, one with and one without a trailing slash.                                                                      |
+| -khw     | --keep-human-written | By default, any URL with a path part that contains 3 or more dashes (-) are removed because it is assumed to be human written content (e.g. blog post), and not interesting. Passing this argument will keep them in the output. |
+| -kym     | --keep-yyyymm        | By default, any URL with a path containing 3 /YYYY/MM (where YYYY is a year and MM month) are removed because it is assumed to be blog/news content, and not interesting. Passing this argument will keep them in the output.    |
+| -rcid    | --regex-custom-id    | **USE WITH CAUTION!** Regex for a Custom ID that your target uses. Ensure the value is passed in quotes. See the section below for more details on this.                                                                         |
+| -iq      | --ignore-querystring | Remove the query string (including URL fragments `#`) so output is unique paths only.                                                                                                                                            |
+| -nb      | --no-banner          | Hides the tool banner (it is hidden by default if you pipe input to urless) output                                                                                                                                               |
+| -v       | --verbose            | Verbose output                                                                                                                                                                                                                   |
 
 ## What does it do exactly?
 
@@ -41,8 +46,8 @@ I'll explain this below, but first here are some terms that will be used:
 - **FILTER-EXTENSIONS**: This refers to the list of extensions that can either be passed with `-fe`, specified with `FILTER_EXTENSIONS` in the `config.yml`, or if neither of those exist, a default list of `.css,.ico,.jpg,.jpeg,.png,.bmp,.svg,.img,.gif,.mp4,.flv,.ogv,.webm,.webp,.mov,.mp3,.m4a,.m4p,.scss,.tif,.tiff,.ttf,.otf,.woff,.woff2,.bmp,.ico,.eot,.htc,.rtf,.swf,.image`.
 - **FILTER-KEYWORDS**: This refers to the list of keywords that can either be passed with `-fk`, specified with `FILTER_KEYWORDS` in the `config.yml`, or if neither of those exist, a default list of `blog,article,news,bootstrap,jquery,captcha,node_modules`
 - **UNWANTED-CONTENT**:
-  - A section of the URL path contains more than 3 dashes (`-`), BUT isn't a GUID. This implies human written content, e.g. `how-to-hack-the-planet`)
-  - The URL contains `/YYYY/MM/` , e.g. a year, month . This is usually static content such as a blog
+  - A section of the URL path contains more than 3 dashes (`-`), BUT isn't a GUID. This implies human written content, e.g. `how-to-hack-the-planet`). If arg `-kym` is passed, then this won't be removed.
+  - The URL contains `/YYYY/MM/` , e.g. a year, month . This is usually static content such as a blog. If arg `-kym` is passed, then this won't be removed.
 
 Here's what happens:
 
@@ -50,8 +55,10 @@ Here's what happens:
 - If the URL has any **FILTER-EXTENSIONS**, it will be removed from the output.
 - If the URL has NO parameters:
   - If the URL contains a **FILTER-KEYWORDS** or **UNWANTED-CONTENT**, it will be removed.
-  - If the URL path contains a GUID, only one of the GUIDs will be included if there are multiple URLs where the GUID is the only difference.
-  - If the URL path contains an Integer ID, only one of the Integer IDs will be included if there are multiple URLs where the Integer ID is the only difference.
+  - These will be checked in order, but only the first one will be applied per URL:
+    - If `-rcid`/`--regex-custom-id` is passed and the URL path contains a Custom ID, only one match to the Custom ID regex will be included if there are multiple URLs where that is the only difference.
+    - If the URL path contains a GUID, only one of the GUIDs will be included if there are multiple URLs where the GUID is the only difference.
+    - If the URL path contains an Integer ID, only one of the Integer IDs will be included if there are multiple URLs where the Integer ID is the only difference.
 - Else the URL has Parameters (or a fragment `#`):
   - If there are multiple URLs with the same parameters, then only URLs with unique parameter values are included.
   - If there are URL's with a Parameter, but no value (or a fragment), then this will be included.
@@ -89,13 +96,42 @@ The `config.yml` file has the keys which can be updated to suit your needs:
 - `FILTER_KEYWORDS` - A comma separated list of keywords (e.g. `blog,article,news` etc.) that URLs are checked against in certain circumstances.
 - `FILTER_EXTENSIONS` - A comma separated list of file extensions (e.g. `.css,.jpg,.jpeg` etc.) that all URLs are checked against. If a URL includes any of the strings then it will be excluded from the output.
 
+## Custom Regex
+
+There are currently automatic regex checks for a path part being a Globally Unique ID (GUID) and an Integer ID, but the `-rcid` / `--regex-custom-id` argument lets you provide a regular expression to identify a custom ID. For example, if a target has a specific ID format (that isn't a GUID or Integer) then you can specify a regex expression for it, and then only one of those will be returned in the output if the rest of the URL is the same. For example:
+
+- Assume the target has a user ID in a format like `U-65241X`
+- And there are multiple URLs like the following:
+  ```
+  https://target.com/blah/U-61723A/settings
+  https://target.com/blah/U-63352B/settings
+  https://target.com/blah/U-61351A/profile
+  https://target.com/blah/U-61723A/settings
+  https://target.com/blah/U-64135C/profile
+  ```
+- You can call `urless` and pass `-rcid 'U-[0-9]{5}[A-Z]'`, then the output would be:
+  ```
+  https://target.com/blah/U-61723A/settings
+  https://target.com/blah/U-64135C/profile
+  ```
+
+**IMPORTANT REGEX NOTES:**
+
+- Writing correct regex expressions can be difficult, and if it isn't correct, you could end up with unpredictable and incorrect output.
+- Always enclose your regex expression in single quotes when passing to the `-rcid` argument.
+- You don't need to add a custom regex for a GUID or Integer ID - these are dealt with already.
+- The regex expression should highlight the whole part of the path. So, if your regex only identifies the start of the path, then add `[^(\?|\/|#|$)]*` to the end of your regex which will mean ALL other characters up until the end of the path part.
+- Make sure the regex only identifies the sections you are interested in, otherwise you may have unexpected results. To test your regex, you can take your input file and do `cat input.txt | grep -E 'U-[0-9]{5}[A-Z]'` for example, and see whether your expression looks correct (it should only highlight what you are interested in, and highlight the whole part of the path that is the custom ID).
+- You can also test using [Regex101](https://regex101.com), entering sample URLs in the **TEST STRING** section to check if it is correct. Make sure the **REGEX FLAGS** **g**lobal and **m**ultiline are selected.
+- There maybe cases where you just can't supply a regex that is going to identify the Custom ID correctly without treating other values as the same. For example, if there are URLs like `https://target.com/blah/xnl/settings` where `xnl` is a User Name, you won't be able to create a regex for user name because it is not a unique enough format to distinguish it from other possible path values.
+
 ## Issues
 
 If you come across any problems at all, or have ideas for improvements, please feel free to raise an issue on Github. If there is a problem, it will be useful if you can provide the exact command you ran and a detailed description of the problem. If possible, run with `-v` to reproduce the problem and let me know about any error messages that are given.
 
 ## TODO
 
-- Add a `-rcid`/`--regex-custom-id` argument that allows a user to add a custom ID regex that may be specific to a target.
+- Allow `-rcid`/`--regex-custom-id` argument to take multiple regex strings
 
 ## And finally...
 

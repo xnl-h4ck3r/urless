@@ -27,12 +27,16 @@ FILTER_KEYWORDS = ''
 # Regex for a path folder of integer
 REGEX_INTEGER = '\d+'
 reIntPart = re.compile(REGEX_INTEGER)
-reInt = re.compile(r'\/'+REGEX_INTEGER+'([?\/]|$)')
+patternsInt = {}
 
 # Regex for a path folder of GUID
 REGEX_GUID = '[({]?[a-fA-F0-9]{8}[-]?([a-fA-F0-9]{4}[-]?){3}[a-fA-F0-9]{12}[})]?'
 reGuidPart = re.compile(REGEX_GUID)
-reGuid = re.compile(r'\/'+REGEX_GUID+'([?\/]|$)')
+patternsGUID = {}
+
+# Regex fields for Custom ID
+reCustomIDPart = Pattern
+patternsCustomID = {}
 
 # Regex for path of YYYY/MM
 REGEX_YYYYMM = '\/[1|2][0|1|9]\\d{2}/[0|1]\\d{1}\/'
@@ -45,8 +49,6 @@ args = None
 urlmap = {}
 patternsSeen = []
 outFile = None
-reCustomID = Pattern
-reCustomIDPart = Pattern
 linesOrigCount = 0
 linesFinalCount = 0
 
@@ -197,25 +199,26 @@ def compareParams(currentParams: list, newParams: dict) -> bool:
         
 def isUnwantedContent(path: str) -> bool:
     '''
-    checks if a path is likely to contain
-    human written content e.g. a blog
+    Checks any potentially unwanted patterns (unless specified otherwise) such as blog/news content
     '''
     try:
         unwanted = False
         
-        # If the path has more than 3 dashes '-' AND isn't a GUID AND (if specified) isn't a Custom ID, then assume it's human written content, e.g. blog
-        for part in path.split('/'):
-            if part.count('-') > 3:
-                if args.regex_custom_id == '':
-                    if not reGuidPart.search(part):
-                        unwanted = True
-                else:
-                    if not reGuidPart.search(part) and reCustomIDPart.search(part):
-                        unwanted = True
+        if not args.keep_human_written:
+            # If the path has more than 3 dashes '-' AND isn't a GUID AND (if specified) isn't a Custom ID, then assume it's human written content, e.g. blog
+            for part in path.split('/'):
+                if part.count('-') > 3:
+                    if args.regex_custom_id == '':
+                        if not reGuidPart.search(part) and reCustomIDPart.search(part):
+                            unwanted = True
+                    else:
+                        if not reGuidPart.search(part):
+                            unwanted = True
         
-        # If it contains a year and month in the path then assume like blog/news content, r.g. .../2019/06/...
-        if reYYYYMM.search(path):
-            unwanted = True
+        if not args.keep_yyyymm:
+            # If it contains a year and month in the path then assume like blog/news content, r.g. .../2019/06/...
+            if reYYYYMM.search(path):
+                unwanted = True
             
         return unwanted
     except Exception as e:
@@ -225,34 +228,51 @@ def createPattern(path: str) -> str:
     '''
     creates patterns for urls with integers or GUIDs in them
     '''
+    global patternsGUID, patternsInt, patternsCustomID
     try:
         newParts = []
         subParts = []
 
+        regexInt = False
+        regexGUID = False
+        regexCustom = False
         for part in path.split('/'):
-            if reGuidPart.search(part):
-                part = re.sub(reGuidPart.pattern, 'REGEX', part)
-                for subPart in part.split('-'):
-                    subParts.append(subPart)
-                guidPart = '-'.join(subParts)
-                newParts.append(guidPart.replace('REGEX',reGuidPart.pattern))
-            elif args.regex_custom_id != '' and reCustomIDPart.search(part):
-                part = re.sub(reCustomIDPart.pattern, 'CUSTOMREGEX', part)
+            if args.regex_custom_id != '' and reCustomIDPart.search(part):
+                part = re.sub(reCustomIDPart.pattern, 'REGEXCUSTOM', part)
+                regexCustom = True
                 for subPart in part.split('-'):
                     subParts.append(subPart)
                 customIDPart = '-'.join(subParts)
-                newParts.append(customIDPart.replace('CUSTOMREGEX',reCustomIDPart.pattern))
+                newParts.append(customIDPart.replace('REGEXCUSTOM',reCustomIDPart.pattern))
+            elif reGuidPart.search(part):
+                part = re.sub(reGuidPart.pattern, 'REGEXGUID', part)
+                regexGUID = True
+                for subPart in part.split('-'):
+                    subParts.append(subPart)
+                guidPart = '-'.join(subParts)
+                newParts.append(guidPart.replace('REGEXGUID',reGuidPart.pattern))   
             elif reIntPart.match(part):
+                regexInt = True
                 newParts.append(reIntPart.pattern)
             else:
                 newParts.append(part)
-        return '/'.join(newParts)
+        createdPattern = '/'.join(newParts)
+        
+        # Depending on the type of regex, add the found pattern to the dictionary
+        if regexCustom:
+            patternsCustomID[createdPattern] = path
+        elif regexGUID:
+            patternsGUID[createdPattern] = path
+        elif regexInt:
+            patternsInt[createdPattern] = path
+            
+        return createdPattern
     except Exception as e:
         writerr(colored('ERROR createPattern 1: ' + str(e), 'red'))
 
 def patternExists(pattern: str) -> bool:
     '''
-    checks if a int pattern exists
+    Checks if a pattern exists
     '''
     try:
         for i, seen_pattern in enumerate(patternsSeen):
@@ -271,7 +291,7 @@ def matchesPatterns(path: str) -> bool:
     '''
     try:
         for pattern in patternsSeen:
-            if re.search(pattern, path) is not None:
+            if re.search('^'+pattern+'$', re.escape(path)) is not None:
                 return True
         return False
     except Exception as e:
@@ -323,7 +343,7 @@ def processUrl(line):
             
         # Build the path and parameters
         path, params = parsed.path, paramsToDict(parsed.query)
-        
+
         # If there is a fragment, add as the last parameter with a name but with value {EMPTY} that doesn't add an = afterwards
         if parsed.fragment:
             params['#'+parsed.fragment] = '{EMPTY}'
@@ -336,8 +356,8 @@ def processUrl(line):
         if hasBadExtension(path):
             return
         
-        # If the are no parameters
-        if not params:
+        # If the are no parameters and path isn't empty
+        if not params and path != "":
             
             # If its unwanted content or has a keyword to be excluded, then just return to continue with the next line
             if isUnwantedContent(path) or hasFilterKeyword(path):
@@ -347,25 +367,34 @@ def processUrl(line):
             if matchesPatterns(path):
                 return
             
+            # If the path has ++ in it for any reason, then just output "as is" otherwise it will raise a regex Multiple Repeat Error
+            if path.find('++') > 0:
+                pattern = path
+            else:
+                # Create a pattern for the current path
+                pattern = createPattern(path)
+                
+                # If the path contains a Custom ID and the pattern doesn't already exist, then add it to the dictionary of patterns seen
+                if args.regex_custom_id != '' and reCustomIDPart.search(path) and not patternExists(pattern):
+                    patternsSeen.append(pattern + REGEX_END)
+                # Else if the path contains a GUID and the pattern doesn't already exist, then add it to the dictionary of patterns seen
+                elif reGuidPart.search(path) and not patternExists(pattern):
+                    patternsSeen.append(pattern + REGEX_END)
+                # Else if the path contains an integer ID and the pattern doesn't already exist, then add it to the dictionary of patterns seen
+                elif reIntPart.search(path) and not patternExists(pattern):
+                    patternsSeen.append(pattern + REGEX_END)
+
+    
+        else:
             # Create a pattern for the current path
             pattern = createPattern(path)
             
-            # If the path contains a GUID and the pattern doesn't already exist, then add it to the dictionary of patterns seen
-            if reGuidPart.search(path) and not patternExists(pattern):
-                patternsSeen.append(pattern + REGEX_END)
-            # Else if the path contains an integer ID and the pattern doesn't already exist, then add it to the dictionary of patterns seen
-            elif reInt.search(path) and not patternExists(pattern):
-                patternsSeen.append(pattern + REGEX_END)
-            # Else if the path contains a Custom ID and the pattern doesn't already exist, then add it to the dictionary of patterns seen
-            elif args.regex_custom_id != '' and reCustomIDPart.search(path) and not patternExists(pattern):
-                patternsSeen.append(pattern + REGEX_END)
-            
         # Update the url map
-        if path not in urlmap[host]:
-            urlmap[host][path] = [params] if params else []
-        elif params and compareParams(urlmap[host][path], params):
-            urlmap[host][path].append(params)
-    
+        if pattern not in urlmap[host]:
+            urlmap[host][pattern] = [params] if params else []
+        elif params and compareParams(urlmap[host][pattern], params):
+            urlmap[host][pattern].append(params)
+
     except ValueError as ve:
         if verbose():
             writerr(colored('This URL caused a Value Error and was not included: ' + line, 'red'))
@@ -385,6 +414,10 @@ def processLine(line):
             line = line.replace('/?','?',1)
         else:
             line = line.rstrip('\n').rstrip('/')
+            
+    # If the -iq / --ignore-querystring argument was passed, remove any querystring and fragment
+    if args.ignore_querystring:
+        line = line.split('?')[0].split('#')[0]
     return line
                             
 def processInput():
@@ -412,7 +445,7 @@ def processInput():
         writerr(colored('ERROR processInput 1: ' + str(e), 'red'))   
         
 def processOutput():
-    global linesFinalCount, linesOrigCount 
+    global linesFinalCount, linesOrigCount, patternsGUID, patternsInt, patternsCustomID
     try:
         # If an output file was specified, open it
         if args.output is not None:
@@ -420,10 +453,28 @@ def processOutput():
                 outFile = open(os.path.expanduser(args.output), 'w')
             except Exception as e:
                 writerr(colored('ERROR processOutput 2 ' + str(e), 'red'))   
-        
+
         # Output all URLs    
         for host, value in urlmap.items():
             for path, params in value.items():
+                
+                # Replace the regex pattern in the path with the first occurrence of that pattern found
+                customRegexFound = False
+                if args.regex_custom_id != '' and path.find(args.regex_custom_id) > 0:
+                    for pattern in patternsCustomID:
+                        if pattern == path:
+                            path = patternsCustomID[pattern]
+                            customRegexFound = True
+                if not customRegexFound:
+                    if path.find(REGEX_GUID) > 0:
+                        for pattern in patternsGUID:
+                            if pattern == path:
+                                path = patternsGUID[pattern]
+                    elif path.find(REGEX_INTEGER) > 0:
+                        for pattern in patternsInt:
+                            if pattern == path:
+                                path = patternsInt[pattern]
+
                 if params:
                     for param in params:
                         linesFinalCount = linesFinalCount + 1
@@ -481,18 +532,29 @@ def showOptionsAndConfig():
         
         if args.keep_slash:
             write(colored('-ks: True', 'magenta')+colored('A trailing slash at the end of a URL in input will not be removed. Therefore there may be identical URLs output, one with and one without a trailing slash.','white'))
+        
+        if args.keep_human_written:
+            write(colored('-khw: True', 'magenta')+colored('Prevent URLs with a path part that contains 3 or more dashes (-) from being removed (e.g. blog post)','white'))
             
-        write()
+        if args.keep_yyyymm:
+            write(colored('-kym: True', 'magenta')+colored('Prevent URLs with a path part that contains a year and month in the format `/YYYY/DD` (e.g. blog or news)','white'))
+            
+        if args.regex_custom_id:
+            write(colored('-rcid: ' + args.regex_custom_id, 'magenta')+colored(' USE WITH CAUTION! ','red')+colored('Regex for a Custom ID that your target uses. Ensure the value is passed in quotes. See the README for more details on this.','white'))
+        
+        if args.keep_yyyymm:
+            write(colored('-iq: True', 'magenta')+colored('Remove the query string (including URL fragments `#`) so output is unique paths only.','white'))
+
+        write('')
         
     except Exception as e:
         writerr(colored('ERROR showOptionsAndConfig 1: ' + str(e), 'red'))    
 
 def argCheckRegexCustomID(value):
-    global reCustomIDPart, reCustomID
+    global reCustomIDPart #, reCustomID
     try:
         # Try to compile the regex
         reCustomIDPart = re.compile(value)
-        reCustomID = re.compile(r'/'+value+'([?/]|$)')
         return value
     except:
         raise argparse.ArgumentTypeError(
@@ -501,7 +563,7 @@ def argCheckRegexCustomID(value):
                         
 def main():
     
-    global args, urlmap, patternsSeen
+    global args, urlmap, patternsSeen, patternsInt, patternsCustomID, patternsGUID
     
     # Tell Python to run the handler() function when SIGINT is received
     signal(SIGINT, handler)
@@ -543,14 +605,33 @@ def main():
         help='A trailing slash at the end of a URL in input will not be removed. Therefore there may be identical URLs output, one with and one without a trailing slash.',
     )
     parser.add_argument(
+        '-khw',
+        '--keep-human-written',
+        action='store_true',
+        help='By default, any URL with a path part that contains 3 or more dashes (-) are removed because it is assumed to be human written content (e.g. blog post) and not interesting. Passing this argument will keep them in the output.',
+    )
+    parser.add_argument(
+        '-kym',
+        '--keep-yyyymm',
+        action='store_true',
+        help='By default, any URL with a path containing 3 /YYYY/MM (where YYYY is a year and MM month) are removed because it is assumed to be blog/news content, and not interesting. Passing this argument will keep them in the output.',
+    )
+    parser.add_argument(
         '-rcid',
         '--regex-custom-id',
         action='store',
-        help='Regex for a Custom ID that your target uses. Ensure the value is passed in quotes.',
+        help='USE WITH CAUTION! Regex for a Custom ID that your target uses. Ensure the value is passed in quotes. See the README for more details on this.',
         default='',
         metavar='REGEX',
         type=argCheckRegexCustomID
     )
+    parser.add_argument(
+        '-iq',
+        '--ignore-querystring',
+        action='store_true',
+        help='Remove the query string (including URL fragments `#`) so output is unique paths only.',
+    )
+    parser.add_argument("-nb", "--no-banner", action="store_true", help="Hides the tool banner.")
     parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output.')
     args = parser.parse_args()
 
@@ -566,7 +647,9 @@ def main():
                         
         # If input is not piped, show the banner, and if --verbose option was chosen show options and config values
         if sys.stdin.isatty():
-            showBanner()
+            # Show banner unless requested to hide
+            if not args.no_banner:
+                showBanner()
             if verbose():
                 showOptionsAndConfig()
 
@@ -582,6 +665,9 @@ def main():
     finally: # Clean up
         urlmap = None
         patternsSeen = None
+        patternsCustomID = None
+        patternsGUID = None
+        patternsInt = None
            
 if __name__ == '__main__':
     main()

@@ -1,5 +1,20 @@
 ## Changelog
 
+- v0.7
+
+  - New
+
+    - Add `-rcid` / `--regex-custom-id` argument to provide a regex expression for a Custom ID that your target uses.
+    - Add `-nb` / `--no-banner` argument to hide the tool banner. This is only needed if you are not piping input to `urless`.
+    - Add `-khw` / `--keep-human-written` argument to prevent URLs with a path part that contains 3 or more dashes (-) from being removed (e.g. blog post). These are normally removed by default.
+    - Add `-kym` / `--keep-yyyymm` argument to prevent URLs with a path part that contains a year and month in the format `/YYYY/DD` (e.g. blog or news). These are normally removed by default.
+    - Add `-iq` / `--ignore-querystring` argument to remove the query string (including URL fragments `#`) so output is unique paths only.
+
+  - Changed
+
+    - Fix bug where `/blah/1337` was not being treated differently to `/1337` for example.
+    - When a Custom ID, GUID or Integer ID is found in a URL, and only one URL from many in the same format are returned in the output, use the first ID found in the input for that ID type.
+
 - v0.6
 
   - New
