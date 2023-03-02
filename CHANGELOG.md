@@ -1,5 +1,20 @@
 ## Changelog
 
+- v0.8
+
+  - New
+
+    - Add `DEFAULT_LANGUAGE` constant and `LANGUAGE` key in `config.yml` with the most common language codes: `en,en-us,en-gb,fr,de,pl,nl,fi,sv,it,es,pt,ru,pt-br,es-mx,zh-tw,js.ko`
+    - Add `-lang`/`--language` argument. If passed and there are multiple URLs with different language codes as a part of the path, only one version of the URL will be output. The codes are specific in the `LANGUAGE` key of `config.yml`
+
+  - Changed
+
+    - A URL can have a GUID, Integer, CustomID and Language Code in the same URL and be de-cluttered properly.
+    - If the Custom Regex ID doesn't start with `^` and end in `$`, those will be added.
+    - Fix bug where it added the last occurrence of a regex pattern instead of the first.
+    - Simplify the code in `processUrl` and `createPattern` functions... I had some strange logic that was unnecessary!
+    - Make sure case is ignored when any `FILTER_EXTENSIONS` in `config.yml` or passed with `-fe` are compared with input.
+
 - v0.7
 
   - New

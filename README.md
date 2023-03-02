@@ -1,6 +1,6 @@
 <center><img src="https://github.com/xnl-h4ck3r/urless/blob/main/urless/images/title.png"></center>
 
-## About - v0.7
+## About - v0.8
 
 This is a tool used to de-clutter a list of URLs.
 As a starting point, I took the amazing tool [uro](https://github.com/s0md3v/uro/) by Somdev Sangwan. But I wanted to change a few things, make some improvements (like deal with GUIDs) and make it more customisable.
@@ -35,7 +35,8 @@ $ source ~/.bashrc
 | -kym     | --keep-yyyymm        | By default, any URL with a path containing 3 /YYYY/MM (where YYYY is a year and MM month) are removed because it is assumed to be blog/news content, and not interesting. Passing this argument will keep them in the output.    |
 | -rcid    | --regex-custom-id    | **USE WITH CAUTION!** Regex for a Custom ID that your target uses. Ensure the value is passed in quotes. See the section below for more details on this.                                                                         |
 | -iq      | --ignore-querystring | Remove the query string (including URL fragments `#`) so output is unique paths only.                                                                                                                                            |
-| -nb      | --no-banner          | Hides the tool banner (it is hidden by default if you pipe input to urless) output                                                                                                                                               |
+| -lang    | --language           | If passed and there are multiple URLs with different language codes as a part of the path, only one version of the URL will be output. The codes are specified in the `LANGUAGE` section of `config.yml`.                        |
+| -nb      | --no-banner          | Hides the tool banner (it is hidden by default if you pipe input to urless) output.                                                                                                                                              |
 | -v       | --verbose            | Verbose output                                                                                                                                                                                                                   |
 
 ## What does it do exactly?
@@ -45,6 +46,7 @@ I'll explain this below, but first here are some terms that will be used:
 
 - **FILTER-EXTENSIONS**: This refers to the list of extensions that can either be passed with `-fe`, specified with `FILTER_EXTENSIONS` in the `config.yml`, or if neither of those exist, a default list of `.css,.ico,.jpg,.jpeg,.png,.bmp,.svg,.img,.gif,.mp4,.flv,.ogv,.webm,.webp,.mov,.mp3,.m4a,.m4p,.scss,.tif,.tiff,.ttf,.otf,.woff,.woff2,.bmp,.ico,.eot,.htc,.rtf,.swf,.image`.
 - **FILTER-KEYWORDS**: This refers to the list of keywords that can either be passed with `-fk`, specified with `FILTER_KEYWORDS` in the `config.yml`, or if neither of those exist, a default list of `blog,article,news,bootstrap,jquery,captcha,node_modules`
+- **LANGUAGE**: This refers to the list of language codes that can be specified with `LANGUAGE` in the `config.yml`, or if it doesn't exist, a default list of the most common codes `en,en-us,en-gb,fr,de,pl,nl,fi,sv,it,es,pt,ru,pt-br,es-mx,zh-tw,js.ko`
 - **UNWANTED-CONTENT**:
   - A section of the URL path contains more than 3 dashes (`-`), BUT isn't a GUID. This implies human written content, e.g. `how-to-hack-the-planet`). If arg `-kym` is passed, then this won't be removed.
   - The URL contains `/YYYY/MM/` , e.g. a year, month . This is usually static content such as a blog. If arg `-kym` is passed, then this won't be removed.
@@ -55,10 +57,10 @@ Here's what happens:
 - If the URL has any **FILTER-EXTENSIONS**, it will be removed from the output.
 - If the URL has NO parameters:
   - If the URL contains a **FILTER-KEYWORDS** or **UNWANTED-CONTENT**, it will be removed.
-  - These will be checked in order, but only the first one will be applied per URL:
-    - If `-rcid`/`--regex-custom-id` is passed and the URL path contains a Custom ID, only one match to the Custom ID regex will be included if there are multiple URLs where that is the only difference.
-    - If the URL path contains a GUID, only one of the GUIDs will be included if there are multiple URLs where the GUID is the only difference.
-    - If the URL path contains an Integer ID, only one of the Integer IDs will be included if there are multiple URLs where the Integer ID is the only difference.
+  - If `-rcid`/`--regex-custom-id` is passed and the URL path contains a Custom ID, only one match to the Custom ID regex will be included if there are multiple URLs where that is the only difference.
+  - If the URL path contains a GUID, only one of the GUIDs will be included if there are multiple URLs where the GUID is the only difference.
+  - If the URL path contains an Integer ID, only one of the Integer IDs will be included if there are multiple URLs where the Integer ID is the only difference.
+  - If the `-lang` argument is passed and the URL contains a language code (e.g. `en-gb`), only one of the language codes will be included if there are multiple URLs where the language code is different.
 - Else the URL has Parameters (or a fragment `#`):
   - If there are multiple URLs with the same parameters, then only URLs with unique parameter values are included.
   - If there are URL's with a Parameter, but no value (or a fragment), then this will be included.
@@ -95,6 +97,7 @@ The `config.yml` file has the keys which can be updated to suit your needs:
 
 - `FILTER_KEYWORDS` - A comma separated list of keywords (e.g. `blog,article,news` etc.) that URLs are checked against in certain circumstances.
 - `FILTER_EXTENSIONS` - A comma separated list of file extensions (e.g. `.css,.jpg,.jpeg` etc.) that all URLs are checked against. If a URL includes any of the strings then it will be excluded from the output.
+- `LANGUAGE` - A comma separated list of language codes (e.g. `en-gb,fr,nl` etc.) that all URLs are checked against when the `-lang` argument is passed. If there are multiple URLs with different language codes, only one version of the URL will be output.
 
 ## Custom Regex
 
@@ -121,6 +124,7 @@ There are currently automatic regex checks for a path part being a Globally Uniq
 - Always enclose your regex expression in single quotes when passing to the `-rcid` argument.
 - You don't need to add a custom regex for a GUID or Integer ID - these are dealt with already.
 - The regex expression should highlight the whole part of the path. So, if your regex only identifies the start of the path, then add `[^(\?|\/|#|$)]*` to the end of your regex which will mean ALL other characters up until the end of the path part.
+- You can add `^` at the start, and `$` at the end, of your regex to ensure it represents the whole part of a path between slashes. However, these will be added for you if they are left out.
 - Make sure the regex only identifies the sections you are interested in, otherwise you may have unexpected results. To test your regex, you can take your input file and do `cat input.txt | grep -E 'U-[0-9]{5}[A-Z]'` for example, and see whether your expression looks correct (it should only highlight what you are interested in, and highlight the whole part of the path that is the custom ID).
 - You can also test using [Regex101](https://regex101.com), entering sample URLs in the **TEST STRING** section to check if it is correct. Make sure the **REGEX FLAGS** **g**lobal and **m**ultiline are selected.
 - There maybe cases where you just can't supply a regex that is going to identify the Custom ID correctly without treating other values as the same. For example, if there are URLs like `https://target.com/blah/xnl/settings` where `xnl` is a User Name, you won't be able to create a regex for user name because it is not a unique enough format to distinguish it from other possible path values.

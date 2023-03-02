@@ -19,18 +19,24 @@ from pathlib import Path
 # Default values if config.yml not found
 DEFAULT_FILTER_EXTENSIONS = '.css,.ico,.jpg,.jpeg,.png,.bmp,.svg,.img,.gif,.mp4,.flv,.ogv,.webm,.webp,.mov,.mp3,.m4a,.m4p,.scss,.tif,.tiff,.ttf,.otf,.woff,.woff2,.bmp,.ico,.eot,.htc,.rtf,.swf,.image'
 DEFAULT_FILTER_KEYWORDS = 'blog,article,news,bootstrap,jquery,captcha,node_modules'
+DEFAULT_LANGUAGE = 'en,en-us,en-gb,fr,de,pl,nl,fi,sv,it,es,pt,ru,pt-br,es-mx,zh-tw,js.ko'
 
 # Variables to hold config.yml values
 FILTER_EXTENSIONS = ''
 FILTER_KEYWORDS = ''
+LANGUAGE = ''
+
+# Regex delimiters
+REGEX_START = '^'
+REGEX_END = '$'
 
 # Regex for a path folder of integer
-REGEX_INTEGER = '\d+'
+REGEX_INTEGER = REGEX_START + '\d+' + REGEX_END
 reIntPart = re.compile(REGEX_INTEGER)
 patternsInt = {}
 
 # Regex for a path folder of GUID
-REGEX_GUID = '[({]?[a-fA-F0-9]{8}[-]?([a-fA-F0-9]{4}[-]?){3}[a-fA-F0-9]{12}[})]?'
+REGEX_GUID = REGEX_START + '[({]?[a-fA-F0-9]{8}[-]?([a-fA-F0-9]{4}[-]?){3}[a-fA-F0-9]{12}[})]?' + REGEX_END
 reGuidPart = re.compile(REGEX_GUID)
 patternsGUID = {}
 
@@ -42,7 +48,9 @@ patternsCustomID = {}
 REGEX_YYYYMM = '\/[1|2][0|1|9]\\d{2}/[0|1]\\d{1}\/'
 reYYYYMM = re.compile(REGEX_YYYYMM)
 
-REGEX_END = '(\/?)$'
+# Regex for path of language code
+reLangPart = Pattern
+patternsLang = {}
 
 # Global variables
 args = None
@@ -85,7 +93,7 @@ def getConfig():
     '''
     Try to get the values from the config file, otherwise use the defaults
     '''
-    global FILTER_EXTENSIONS, FILTER_KEYWORDS
+    global FILTER_EXTENSIONS, FILTER_KEYWORDS, LANGUAGE, reLangPart
     try:
 
         # Try to get the config file values
@@ -125,11 +133,29 @@ def getConfig():
                 except Exception as e:
                     writerr(colored('Unable to read FILTER_EXTENSIONS from config.yml - default set', 'red'))
                     FILTER_EXTENSIONS = DEFAULT_FILTER_EXTENSIONS
+            
+            # If the user provided the --language argument then create the regex for language codes
+            if args.language:  
+                # Get the language codes
+                try:
+                    LANGUAGE = config.get('LANGUAGE')
+                    if str(LANGUAGE) == 'None':
+                        writerr(colored('No value for LANGUAGE in config.yml - default set', 'yellow'))
+                        LANGUAGE = ''
+                except Exception as e:
+                    writerr(colored('Unable to read LANGUAGE from config.yml - default set', 'red'))
+                    LANGUAGE = DEFAULT_LANGUAGE
+                # Set the language regex
+                try:
+                    reLangPart = re.compile(REGEX_START + '(' + LANGUAGE.replace(',','|') + ')' + REGEX_END)    
+                except Exception as e:
+                    writerr(colored('ERROR getConfig 2: ' + str(e), 'red'))
                     
         except:
             writerr(colored('WARNING: Cannot find config.yml, so using default values', 'yellow'))
             FILTER_EXTENSIONS = DEFAULT_FILTER_EXTENSIONS
             FILTER_KEYWORDS = DEFAULT_FILTER_KEYWORDS
+            LANGUAGE = DEFAULT_LANGUAGE
             
     except Exception as e:
         writerr(colored('ERROR getConfig 1: ' + str(e), 'red'))
@@ -208,7 +234,7 @@ def isUnwantedContent(path: str) -> bool:
             # If the path has more than 3 dashes '-' AND isn't a GUID AND (if specified) isn't a Custom ID, then assume it's human written content, e.g. blog
             for part in path.split('/'):
                 if part.count('-') > 3:
-                    if args.regex_custom_id == '':
+                    if str(reCustomIDPart.pattern) == '':
                         if not reGuidPart.search(part) and reCustomIDPart.search(part):
                             unwanted = True
                     else:
@@ -228,43 +254,42 @@ def createPattern(path: str) -> str:
     '''
     creates patterns for urls with integers or GUIDs in them
     '''
-    global patternsGUID, patternsInt, patternsCustomID
+    global patternsGUID, patternsInt, patternsCustomID, patternsLang
     try:
         newParts = []
-        subParts = []
 
         regexInt = False
         regexGUID = False
         regexCustom = False
+        regexLang = False
         for part in path.split('/'):
-            if args.regex_custom_id != '' and reCustomIDPart.search(part):
-                part = re.sub(reCustomIDPart.pattern, 'REGEXCUSTOM', part)
+            if part == '':
+                newParts.append(part)
+            elif str(reCustomIDPart.pattern) != '' and reCustomIDPart.search(part):
                 regexCustom = True
-                for subPart in part.split('-'):
-                    subParts.append(subPart)
-                customIDPart = '-'.join(subParts)
-                newParts.append(customIDPart.replace('REGEXCUSTOM',reCustomIDPart.pattern))
+                newParts.append(reCustomIDPart.pattern)
             elif reGuidPart.search(part):
-                part = re.sub(reGuidPart.pattern, 'REGEXGUID', part)
                 regexGUID = True
-                for subPart in part.split('-'):
-                    subParts.append(subPart)
-                guidPart = '-'.join(subParts)
-                newParts.append(guidPart.replace('REGEXGUID',reGuidPart.pattern))   
+                newParts.append(reGuidPart.pattern)
             elif reIntPart.match(part):
                 regexInt = True
                 newParts.append(reIntPart.pattern)
+            elif args.language and reLangPart.match(part.lower()):
+                regexLang = True
+                newParts.append(reLangPart.pattern)
             else:
                 newParts.append(part)
         createdPattern = '/'.join(newParts)
         
-        # Depending on the type of regex, add the found pattern to the dictionary
-        if regexCustom:
+        # Depending on the type of regex, add the found pattern to the dictionary if it hasn't been added already
+        if regexCustom and createdPattern not in patternsCustomID:
             patternsCustomID[createdPattern] = path
-        elif regexGUID:
+        elif regexGUID and createdPattern not in patternsGUID:
             patternsGUID[createdPattern] = path
-        elif regexInt:
+        elif regexInt and createdPattern not in patternsInt:
             patternsInt[createdPattern] = path
+        elif regexLang and createdPattern not in patternsLang:
+            patternsLang[createdPattern] = path
             
         return createdPattern
     except Exception as e:
@@ -291,7 +316,7 @@ def matchesPatterns(path: str) -> bool:
     '''
     try:
         for pattern in patternsSeen:
-            if re.search('^'+pattern+'$', re.escape(path)) is not None:
+            if re.search(pattern, re.escape(path)) is not None:
                 return True
         return False
     except Exception as e:
@@ -317,7 +342,7 @@ def hasBadExtension(path: str) -> bool:
         if '/' not in path.split('.')[-1]:
             extensions = FILTER_EXTENSIONS.split(',')
             for extension in extensions:
-                if path.lower().endswith(extension):
+                if path.lower().endswith(extension.lower()):
                     badExtension = True
         return badExtension
     except Exception as e:
@@ -367,24 +392,9 @@ def processUrl(line):
             if matchesPatterns(path):
                 return
             
-            # If the path has ++ in it for any reason, then just output "as is" otherwise it will raise a regex Multiple Repeat Error
-            if path.find('++') > 0:
-                pattern = path
-            else:
-                # Create a pattern for the current path
-                pattern = createPattern(path)
-                
-                # If the path contains a Custom ID and the pattern doesn't already exist, then add it to the dictionary of patterns seen
-                if args.regex_custom_id != '' and reCustomIDPart.search(path) and not patternExists(pattern):
-                    patternsSeen.append(pattern + REGEX_END)
-                # Else if the path contains a GUID and the pattern doesn't already exist, then add it to the dictionary of patterns seen
-                elif reGuidPart.search(path) and not patternExists(pattern):
-                    patternsSeen.append(pattern + REGEX_END)
-                # Else if the path contains an integer ID and the pattern doesn't already exist, then add it to the dictionary of patterns seen
-                elif reIntPart.search(path) and not patternExists(pattern):
-                    patternsSeen.append(pattern + REGEX_END)
-
-    
+        # If the path has ++ in it for any reason, then just output "as is" otherwise it will raise a regex Multiple Repeat Error
+        if path.find('++') > 0:
+            pattern = path
         else:
             # Create a pattern for the current path
             pattern = createPattern(path)
@@ -445,7 +455,7 @@ def processInput():
         writerr(colored('ERROR processInput 1: ' + str(e), 'red'))   
         
 def processOutput():
-    global linesFinalCount, linesOrigCount, patternsGUID, patternsInt, patternsCustomID
+    global linesFinalCount, linesOrigCount, patternsGUID, patternsInt, patternsCustomID, patternsLang
     try:
         # If an output file was specified, open it
         if args.output is not None:
@@ -457,24 +467,31 @@ def processOutput():
         # Output all URLs    
         for host, value in urlmap.items():
             for path, params in value.items():
-                
-                # Replace the regex pattern in the path with the first occurrence of that pattern found
-                customRegexFound = False
-                if args.regex_custom_id != '' and path.find(args.regex_custom_id) > 0:
-                    for pattern in patternsCustomID:
-                        if pattern == path:
-                            path = patternsCustomID[pattern]
-                            customRegexFound = True
-                if not customRegexFound:
-                    if path.find(REGEX_GUID) > 0:
-                        for pattern in patternsGUID:
-                            if pattern == path:
-                                path = patternsGUID[pattern]
-                    elif path.find(REGEX_INTEGER) > 0:
-                        for pattern in patternsInt:
-                            if pattern == path:
-                                path = patternsInt[pattern]
 
+                # Replace the regex pattern in the path with the first occurrence of that pattern found
+                try:
+                    customRegexFound = False
+                    if str(reCustomIDPart.pattern) != '' and path.find(str(reCustomIDPart.pattern)) > 0:
+                        for pattern in patternsCustomID:
+                            if pattern == path:
+                                path = patternsCustomID[pattern]
+                                customRegexFound = True
+                    if not customRegexFound:
+                        if path.find(REGEX_GUID) > 0:
+                            for pattern in patternsGUID:
+                                if pattern == path:
+                                    path = patternsGUID[pattern]
+                        elif path.find(REGEX_INTEGER) > 0:
+                            for pattern in patternsInt:
+                                if pattern == path:
+                                    path = patternsInt[pattern]
+                        elif path.find(str(reLangPart.pattern)) > 0:
+                            for pattern in patternsLang:
+                                if pattern == path:
+                                    path = patternsLang[pattern]
+                except Exception as e:
+                    writerr(colored('ERROR processOutput 4: ' + str(e), 'red'))
+                    
                 if params:
                     for param in params:
                         linesFinalCount = linesFinalCount + 1
@@ -511,7 +528,7 @@ def processOutput():
         writerr(colored('ERROR processOutput 1: ' + str(e), 'red'))
 
 def showOptionsAndConfig():
-    global FILTER_EXTENSIONS, FILTER_KEYWORDS
+    global FILTER_EXTENSIONS, FILTER_KEYWORDS, LANGUAGE
     try:
         write(colored('Selected options and config:', 'cyan'))
         write(colored('-i: ' + args.input, 'magenta')+colored(' The input file of URLs to de-clutter.','white'))
@@ -530,6 +547,10 @@ def showOptionsAndConfig():
         else:
             write(colored('Filter Extensions (from Config.yml): ', 'magenta')+colored(FILTER_EXTENSIONS,'white'))
         
+        if args.language:
+            write(colored('Languages (from Config.yml): ', 'magenta')+colored(LANGUAGE,'white'))
+            write(colored('-lang: True', 'magenta')+colored('If there are multiple URLs with different language codes as a part of the path, only one version of the URL will be output.','white'))
+            
         if args.keep_slash:
             write(colored('-ks: True', 'magenta')+colored('A trailing slash at the end of a URL in input will not be removed. Therefore there may be identical URLs output, one with and one without a trailing slash.','white'))
         
@@ -540,10 +561,10 @@ def showOptionsAndConfig():
             write(colored('-kym: True', 'magenta')+colored('Prevent URLs with a path part that contains a year and month in the format `/YYYY/DD` (e.g. blog or news)','white'))
             
         if args.regex_custom_id:
-            write(colored('-rcid: ' + args.regex_custom_id, 'magenta')+colored(' USE WITH CAUTION! ','red')+colored('Regex for a Custom ID that your target uses. Ensure the value is passed in quotes. See the README for more details on this.','white'))
+            write(colored('-rcid: \'' + str(reCustomIDPart.pattern) + '\'', 'magenta')+colored(' USE WITH CAUTION! ','red')+colored('Regex for a Custom ID that your target uses. Ensure the value is passed in quotes. See the README for more details on this.','white'))
         
         if args.keep_yyyymm:
-            write(colored('-iq: True', 'magenta')+colored('Remove the query string (including URL fragments `#`) so output is unique paths only.','white'))
+            write(colored('-iq: True', 'magenta')+colored(' Remove the query string (including URL fragments `#`) so output is unique paths only.','white'))
 
         write('')
         
@@ -551,10 +572,19 @@ def showOptionsAndConfig():
         writerr(colored('ERROR showOptionsAndConfig 1: ' + str(e), 'red'))    
 
 def argCheckRegexCustomID(value):
-    global reCustomIDPart #, reCustomID
+    global reCustomIDPart
     try:
+        
+         # If the Custom ID regex was passed, then prefix with ^ and suffix with $ if they are not there already
+        if value != '':
+            if value[0] != REGEX_START:
+                value = REGEX_START + value
+            if value[-1] != REGEX_END:
+                value = value + REGEX_END
+        
         # Try to compile the regex
         reCustomIDPart = re.compile(value)
+        
         return value
     except:
         raise argparse.ArgumentTypeError(
@@ -563,7 +593,7 @@ def argCheckRegexCustomID(value):
                         
 def main():
     
-    global args, urlmap, patternsSeen, patternsInt, patternsCustomID, patternsGUID
+    global args, urlmap, patternsSeen, patternsInt, patternsCustomID, patternsGUID, patternsLang
     
     # Tell Python to run the handler() function when SIGINT is received
     signal(SIGINT, handler)
@@ -631,6 +661,12 @@ def main():
         action='store_true',
         help='Remove the query string (including URL fragments `#`) so output is unique paths only.',
     )
+    parser.add_argument(
+        '-lang',
+        '--language',
+        action='store_true',
+        help='If passed, and there are multiple URLs with different language codes as a part of the path, only one version of the URL will be output. The codes are specified in the "LANGUAGE" section of "config.yml".',
+    )
     parser.add_argument("-nb", "--no-banner", action="store_true", help="Hides the tool banner.")
     parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output.')
     args = parser.parse_args()
@@ -644,7 +680,7 @@ def main():
 
         # Get the config settings from the config.yml file
         getConfig()
-                        
+        
         # If input is not piped, show the banner, and if --verbose option was chosen show options and config values
         if sys.stdin.isatty():
             # Show banner unless requested to hide
@@ -668,6 +704,7 @@ def main():
         patternsCustomID = None
         patternsGUID = None
         patternsInt = None
+        patternsLang = None
            
 if __name__ == '__main__':
     main()
