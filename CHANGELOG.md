@@ -1,5 +1,11 @@
 ## Changelog
 
+- v0.9
+
+- Changed
+
+  - Add i18N language codes `gb-en,ca-en,au-en,fr-fr,ca-fr,es-es,mx-es,de-de,it-it,br-pt,pt-pt,jp-ja,cn-zh,tw-zh,kr-ko,sa-ar,in-hi,ru-ru`
+
 - v0.8
 
   - New
