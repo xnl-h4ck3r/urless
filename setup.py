@@ -1,9 +1,15 @@
 #!/usr/bin/env python
-from setuptools import setup, find_packages
 import os
+import shutil
+from setuptools import setup, find_packages
 
 # Define the target directory for the config.yml file
 target_directory = os.path.join(os.path.expanduser("~"), ".config", "urless") if os.path.expanduser("~") == os.path.expanduser("~" + os.environ['USER']) else None
+
+# Copy the config.yml file to the target directory if it exists
+if target_directory and os.path.isfile("config.yml"):
+    os.makedirs(target_directory, exist_ok=True)
+    shutil.copy("config.yml", target_directory)
 
 setup(
     name="urless",
@@ -20,7 +26,4 @@ setup(
             'urless = urless.urless:main',
         ],
     },
-    data_files=[
-        (target_directory, ['config.yml']),
-    ],
 )
