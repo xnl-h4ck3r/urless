@@ -7,19 +7,27 @@ As a starting point, I took the amazing tool [uro](https://github.com/s0md3v/uro
 
 ## Installation
 
-urless supports **Python 3**.
+`urless` supports **Python 3**.
 
-```
+### Legacy Install
+
+This option will install `urless` in your default python environment.
+
+```bash
 $ git clone https://github.com/xnl-h4ck3r/urless.git
 $ cd urless
+$ pip install .
+
+OR
+
 $ python setup.py install
 ```
 
-If you would prefer to use `urless` instead of `python3 urless.py`, you could add an alias to your `.bashrc` file for example:
+### pipx
 
-```
-$ echo "alias urless='python3 $PWD/urless.py'" >> ~/.bashrc
-$ source ~/.bashrc
+Quick setup in isolated python environment using [pipx](https://pypa.github.io/pipx/)
+```bash
+pipx install git+https://github.com/xnl-h4ck3r/urless.git
 ```
 
 ## Usage

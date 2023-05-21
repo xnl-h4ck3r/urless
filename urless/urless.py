@@ -99,7 +99,7 @@ def getConfig():
         # Try to get the config file values
         try:        
             urlessPath = Path(
-                os.path.dirname(os.path.realpath(__file__))
+                os.path.join(os.path.expanduser("~"), ".config", "urless") if os.path.expanduser("~") == os.path.expanduser("~" + os.environ['USER']) else None
             )
             urlessPath.absolute
             if urlessPath == '':
