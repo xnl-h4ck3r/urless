@@ -1,26 +1,17 @@
 <center><img src="https://github.com/xnl-h4ck3r/urless/blob/main/urless/images/title.png"></center>
 
-## About - v0.9
+## About - v1.0
 
 This is a tool used to de-clutter a list of URLs.
-As a starting point, I took the amazing tool [uro](https://github.com/s0md3v/uro/) by Somdev Sangwan. But I wanted to change a few things, make some improvements (like deal with GUIDs) and make it more customisable.
+As a starting point, I took the amazing tool [uro](https://github.com/s0md3v/uro/) by Somdev Sangwan. But I wanted to change a few things, make some improvements (like deal with GUIDs) and make it more customizable.
 
 ## Installation
 
 `urless` supports **Python 3**.
 
-### Legacy Install
-
-This option will install `urless` in your default python environment.
-
+Install `urless` in default(global) python environment.
 ```bash
-$ git clone https://github.com/xnl-h4ck3r/urless.git
-$ cd urless
-$ pip install .
-
-OR
-
-$ python setup.py install
+$ pip install git+https://github.com/xnl-h4ck3r/urless.git
 ```
 
 ### pipx

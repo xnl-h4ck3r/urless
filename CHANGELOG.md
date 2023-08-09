@@ -1,5 +1,11 @@
 ## Changelog
 
+- v1.0
+
+- Changed
+
+  - Add support for quick install using pip or pipx.
+
 - v0.9
 
 - Changed

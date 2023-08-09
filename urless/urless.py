@@ -98,9 +98,18 @@ def getConfig():
 
         # Try to get the config file values
         try:        
-            urlessPath = Path(
-                os.path.join(os.path.expanduser("~"), ".config", "urless") if os.path.expanduser("~") == os.path.expanduser("~" + os.environ['USER']) else None
+            # urlessPath = Path(
+            #     os.path.join(os.path.expanduser("~"), ".config", "urless") if os.path.expanduser("~") else None
+            # )
+
+            # Put config in global location based on the OS.
+            urlessPath = (
+                Path(os.path.join(os.getenv('APPDATA', ''), 'urless')) if os.name == 'nt'
+                else Path(os.path.join(os.path.expanduser("~"), ".config", "urless")) if os.name == 'posix'
+                else Path(os.path.join(os.path.expanduser("~"), "Library", "Application Support", "urless")) if os.name == 'darwin'
+                else None
             )
+
             urlessPath.absolute
             if urlessPath == '':
                 configPath = 'config.yml'
