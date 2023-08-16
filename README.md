@@ -10,6 +10,7 @@ As a starting point, I took the amazing tool [uro](https://github.com/s0md3v/uro
 `urless` supports **Python 3**.
 
 Install `urless` in default(global) python environment.
+
 ```bash
 $ pip install git+https://github.com/xnl-h4ck3r/urless.git
 ```
@@ -17,6 +18,7 @@ $ pip install git+https://github.com/xnl-h4ck3r/urless.git
 ### pipx
 
 Quick setup in isolated python environment using [pipx](https://pypa.github.io/pipx/)
+
 ```bash
 pipx install git+https://github.com/xnl-h4ck3r/urless.git
 ```
@@ -69,25 +71,25 @@ Here's what happens:
 ### Basic use
 
 ```
-cat target_urls.txt | python3 urless.py
+cat target_urls.txt | urless
 ```
 
 or
 
 ```
-python3 urless.py -i target_urls.txt
+urless -i target_urls.txt
 ```
 
 ### Capture output
 
 ```
-cat target_urls.txt | python3 urless.py > output.txt
+cat target_urls.txt | urless > output.txt
 ```
 
 or
 
 ```
-python3 urless.py -i target_urls.txt -o output.txt
+urless -i target_urls.txt -o output.txt
 ```
 
 ## config.yml
