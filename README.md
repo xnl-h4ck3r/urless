@@ -1,25 +1,24 @@
 <center><img src="https://github.com/xnl-h4ck3r/urless/blob/main/urless/images/title.png"></center>
 
-## About - v0.9
+## About - v1.0
 
 This is a tool used to de-clutter a list of URLs.
-As a starting point, I took the amazing tool [uro](https://github.com/s0md3v/uro/) by Somdev Sangwan. But I wanted to change a few things, make some improvements (like deal with GUIDs) and make it more customisable.
+As a starting point, I took the amazing tool [uro](https://github.com/s0md3v/uro/) by Somdev Sangwan. But I wanted to change a few things, make some improvements (like deal with GUIDs) and make it more customizable.
 
 ## Installation
 
-urless supports **Python 3**.
+`urless` supports **Python 3**.
 
-```
-$ git clone https://github.com/xnl-h4ck3r/urless.git
-$ cd urless
-$ python setup.py install
+Install `urless` in default(global) python environment.
+```bash
+$ pip install git+https://github.com/xnl-h4ck3r/urless.git
 ```
 
-If you would prefer to use `urless` instead of `python3 urless.py`, you could add an alias to your `.bashrc` file for example:
+### pipx
 
-```
-$ echo "alias urless='python3 $PWD/urless.py'" >> ~/.bashrc
-$ source ~/.bashrc
+Quick setup in isolated python environment using [pipx](https://pypa.github.io/pipx/)
+```bash
+pipx install git+https://github.com/xnl-h4ck3r/urless.git
 ```
 
 ## Usage
