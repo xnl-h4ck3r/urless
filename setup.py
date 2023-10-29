@@ -25,7 +25,7 @@ setup(
     description="De-clutter a list of URLs",
     long_description=open("README.md").read(),
     author="@xnl-h4ck3r",
-    url="https://github.com/xnl-h4ck3r/urless",
+    url="https://github.com/Nishantbhagat57/urless",
     zip_safe=False,
     install_requires=["argparse", "pyyaml", "termcolor", "urlparse3", "chardet"],
     entry_points={
