@@ -27,7 +27,7 @@ setup(
     author="@xnl-h4ck3r",
     url="https://github.com/xnl-h4ck3r/urless",
     zip_safe=False,
-    install_requires=["argparse", "pyyaml", "termcolor", "urlparse3"],
+    install_requires=["argparse", "pyyaml", "termcolor", "urlparse3", "chardet"],
     entry_points={
         'console_scripts': [
             'urless = urless.urless:main',
