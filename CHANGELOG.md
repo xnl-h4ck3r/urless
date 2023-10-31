@@ -1,5 +1,11 @@
 ## Changelog
 
+- v1.1
+
+- Changed
+
+  - Add support to automatically identify file encoding.
+
 - v1.0
 
 - Changed
