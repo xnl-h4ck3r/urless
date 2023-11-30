@@ -49,7 +49,7 @@ I'll explain this below, but first here are some terms that will be used:
 - **FILTER-KEYWORDS**: This refers to the list of keywords that can either be passed with `-fk`, specified with `FILTER_KEYWORDS` in the `config.yml`, or if neither of those exist, a default list of `blog,article,news,bootstrap,jquery,captcha,node_modules`
 - **LANGUAGE**: This refers to the list of language codes that can be specified with `LANGUAGE` in the `config.yml`, or if it doesn't exist, a default list of the most common codes `en,en-us,en-gb,fr,de,pl,nl,fi,sv,it,es,pt,ru,pt-br,es-mx,zh-tw,js.ko`
 - **UNWANTED-CONTENT**:
-  - A section of the URL path contains more than 3 dashes (`-`), BUT isn't a GUID. This implies human written content, e.g. `how-to-hack-the-planet`). If arg `-kym` is passed, then this won't be removed.
+  - A section of the URL path contains more than 3 dashes (`-`), BUT isn't a GUID. This implies human written content, e.g. `how-to-hack-the-planet`). If arg `-khw` is passed, then this won't be removed.
   - The URL contains `/YYYY/MM/` , e.g. a year, month . This is usually static content such as a blog. If arg `-kym` is passed, then this won't be removed.
 
 Here's what happens:
