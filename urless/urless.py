@@ -11,6 +11,7 @@ import sys
 from typing import Pattern
 import yaml
 import argparse
+import chardet
 from signal import SIGINT, signal
 from urllib.parse import urlparse
 from termcolor import colored
@@ -438,30 +439,32 @@ def processLine(line):
     if args.ignore_querystring:
         line = line.split('?')[0].split('#')[0]
     return line
-                            
+
 def processInput():
-    
     global linesOrigCount
     try:
         if not sys.stdin.isatty():
             for line in sys.stdin:
                 processUrl(processLine(line))
         else:
+            with open(os.path.expanduser(args.input), 'rb') as f:
+                result = chardet.detect(f.read())  # or readline if the file is large
+                
             try:
-                inFile = open(os.path.expanduser(args.input), 'r')
+                inFile = open(os.path.expanduser(args.input), 'r', encoding=result['encoding'])
                 lines = inFile.readlines()
                 linesOrigCount = len(lines)
                 for line in lines:
                     processUrl(processLine(line))
             except Exception as e:
                 writerr(colored('ERROR processInput 2 ' + str(e), 'red'))    
-            
+
             try:
                 inFile.close()
             except:
-                pass            
+                pass        
     except Exception as e:
-        writerr(colored('ERROR processInput 1: ' + str(e), 'red'))   
+        writerr(colored('ERROR processInput 1: ' + str(e), 'red'))  
         
 def processOutput():
     global linesFinalCount, linesOrigCount, patternsGUID, patternsInt, patternsCustomID, patternsLang
