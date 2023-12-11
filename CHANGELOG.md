@@ -1,5 +1,11 @@
 ## Changelog
 
+- v1.2
+
+  - Changed
+
+    - Changes to prevent `SyntaxWarning: invalid escape sequence` errors when Python 3.12 is used.
+
 - v1.1
 
 - Changed

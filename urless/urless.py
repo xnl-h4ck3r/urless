@@ -32,7 +32,7 @@ REGEX_START = '^'
 REGEX_END = '$'
 
 # Regex for a path folder of integer
-REGEX_INTEGER = REGEX_START + '\d+' + REGEX_END
+REGEX_INTEGER = REGEX_START + r'\d+' + REGEX_END
 reIntPart = re.compile(REGEX_INTEGER)
 patternsInt = {}
 
@@ -46,7 +46,7 @@ reCustomIDPart = Pattern
 patternsCustomID = {}
 
 # Regex for path of YYYY/MM
-REGEX_YYYYMM = '\/[1|2][0|1|9]\\d{2}/[0|1]\\d{1}\/'
+REGEX_YYYYMM = r'\/[1|2][0|1|9]\\d{2}/[0|1]\\d{1}\/'
 reYYYYMM = re.compile(REGEX_YYYYMM)
 
 # Regex for path of language code
@@ -83,11 +83,11 @@ def writerr(text=''):
             
 def showBanner():
     write('')
-    write(colored('  __  _ ____  _   ___  ___ ____ ', 'red'))
-    write(colored(' | | | |  _ \| | / _ \/ __/ __/ ', 'yellow'))
-    write(colored(' | | | | |_) | ||  __/\__ \__ \ ', 'green'))
-    write(colored(' | |_| |  _ <| |_\___/\___/___/ ', 'cyan'))
-    write(colored('  \___/|_| \_\___/', 'magenta')+colored('by Xnl-h4ck3r','white'))
+    write(colored(r'  __  _ ____  _   ___  ___ ____ ', 'red'))
+    write(colored(r' | | | |  _ \| | / _ \/ __/ __/ ', 'yellow'))
+    write(colored(r' | | | | |_) | ||  __/\__ \__ \ ', 'green'))
+    write(colored(r' | |_| |  _ <| |_\___/\___/___/ ', 'cyan'))
+    write(colored(r'  \___/|_| \_\___/', 'magenta')+colored('by Xnl-h4ck3r','white'))
     write('')
 
 def getConfig():
