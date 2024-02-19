@@ -1,5 +1,11 @@
 ## Changelog
 
+- v1.3
+
+  - New
+
+    - Add argument `-fnp`/`--fragment-not-param`. If passed the URL fragments `#` will NOT be treated in the same way as parameters, e.g. if a link has a filter keyword and a fragment (or param) the link is usually kept, but if this argument is passed and a link has a filter word and fragment, the link will be removed. Also, if this arg is passed and `-iq` / `--ignore-querystring` is used, the fragment will NOT be removed from links if no query string is in the link.
+
 - v1.2
 
   - Changed

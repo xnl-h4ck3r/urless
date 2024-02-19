@@ -379,9 +379,14 @@ def processUrl(line):
         # Build the path and parameters
         path, params = parsed.path, paramsToDict(parsed.query)
 
-        # If there is a fragment, add as the last parameter with a name but with value {EMPTY} that doesn't add an = afterwards
+        # If there is a fragment...
+        #   if arg -fnp / --fragment-not-param was passed, change the path to include the hash,
+        #   else, add as the last parameter with a name but with value {EMPTY} that doesn't add an = afterwards
         if parsed.fragment:
-            params['#'+parsed.fragment] = '{EMPTY}'
+            if args.fragment_not_param:
+                path = path+'#'+parsed.fragment
+            else:
+                params['#'+parsed.fragment] = '{EMPTY}'
         
         # Add the host to the map if it hasn't already been seen
         if host not in urlmap:
@@ -435,9 +440,12 @@ def processLine(line):
         else:
             line = line.rstrip('\n').rstrip('/')
             
-    # If the -iq / --ignore-querystring argument was passed, remove any querystring and fragment
+    # If the -iq / --ignore-querystring argument was passed, remove any querystring and fragment (unless -fnp is passed, in which case the fragment is only removed if a query string exists too)
     if args.ignore_querystring:
-        line = line.split('?')[0].split('#')[0]
+        if args.fragment_not_param:
+            line = line.split('?')[0]
+        else:
+            line = line.split('?')[0].split('#')[0]
     return line
 
 def processInput():
@@ -672,6 +680,12 @@ def main():
         '--ignore-querystring',
         action='store_true',
         help='Remove the query string (including URL fragments `#`) so output is unique paths only.',
+    )
+    parser.add_argument(
+        '-fnp',
+        '--fragment-not-param',
+        action='store_true',
+        help='Don\'t treat URL fragments `#` in the same way as parameters, e.g. if a link has a filter keyword and a fragment (or param) it is usually kept, but if this argument is passed and a link has a filter word and fragment, it will be removed.',
     )
     parser.add_argument(
         '-lang',
