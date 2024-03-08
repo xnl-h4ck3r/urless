@@ -16,16 +16,23 @@ from signal import SIGINT, signal
 from urllib.parse import urlparse
 from termcolor import colored
 from pathlib import Path
+try:
+    from . import __version__
+    import requests
+except:
+    pass
 
 # Default values if config.yml not found
 DEFAULT_FILTER_EXTENSIONS = '.css,.ico,.jpg,.jpeg,.png,.bmp,.svg,.img,.gif,.mp4,.flv,.ogv,.webm,.webp,.mov,.mp3,.m4a,.m4p,.scss,.tif,.tiff,.ttf,.otf,.woff,.woff2,.bmp,.ico,.eot,.htc,.rtf,.swf,.image'
 DEFAULT_FILTER_KEYWORDS = 'blog,article,news,bootstrap,jquery,captcha,node_modules'
 DEFAULT_LANGUAGE = 'en,en-us,en-gb,fr,de,pl,nl,fi,sv,it,es,pt,ru,pt-br,es-mx,zh-tw,js.ko,gb-en,ca-en,au-en,fr-fr,ca-fr,es-es,mx-es,de-de,it-it,br-pt,pt-pt,jp-ja,cn-zh,tw-zh,kr-ko,sa-ar,in-hi,ru-ru'
+DEFAULT_REMOVE_PARAMS = '_'
 
 # Variables to hold config.yml values
 FILTER_EXTENSIONS = ''
 FILTER_KEYWORDS = ''
 LANGUAGE = ''
+REMOVE_PARAMS = ''
 
 # Regex delimiters
 REGEX_START = '^'
@@ -80,7 +87,20 @@ def writerr(text=''):
         sys.stdout.write(text+'\n')
     else:
         sys.stderr.write(text+'\n')
-            
+
+def showVersion():
+    try:
+        try:
+            resp = requests.get('https://raw.githubusercontent.com/xnl-h4ck3r/urless/main/urless/__init__.py',timeout=3)
+        except:
+            write('Current urless version '+__version__+' (unable to check if latest)\n')
+        if __version__ == resp.text.split('=')[1].replace('"',''):
+            write('Current urless version '+__version__+' ('+colored('latest','green')+')\n')
+        else:
+            write('Current urless version '+__version__+' ('+colored('outdated','red')+')\n')
+    except:
+        pass
+      
 def showBanner():
     write('')
     write(colored(r'  __  _ ____  _   ___  ___ ____ ', 'red'))
@@ -89,20 +109,17 @@ def showBanner():
     write(colored(r' | |_| |  _ <| |_\___/\___/___/ ', 'cyan'))
     write(colored(r'  \___/|_| \_\___/', 'magenta')+colored('by Xnl-h4ck3r','white'))
     write('')
+    showVersion()
 
 def getConfig():
     '''
     Try to get the values from the config file, otherwise use the defaults
     '''
-    global FILTER_EXTENSIONS, FILTER_KEYWORDS, LANGUAGE, reLangPart
+    global FILTER_EXTENSIONS, FILTER_KEYWORDS, LANGUAGE, REMOVE_PARAMS, reLangPart
     try:
 
         # Try to get the config file values
         try:        
-            # urlessPath = Path(
-            #     os.path.join(os.path.expanduser("~"), ".config", "urless") if os.path.expanduser("~") else None
-            # )
-
             # Put config in global location based on the OS.
             urlessPath = (
                 Path(os.path.join(os.getenv('APPDATA', ''), 'urless')) if os.name == 'nt'
@@ -126,7 +143,7 @@ def getConfig():
                     FILTER_KEYWORDS = config.get('FILTER_KEYWORDS')
                     if str(FILTER_KEYWORDS) == 'None':
                         writerr(colored('No value for FILTER_KEYWORDS in config.yml - default set', 'yellow'))
-                        FILTER_KEYWORDS = ''
+                        FILTER_KEYWORDS = DEFAULT_FILTER_KEYWORDS
                 except Exception as e:
                     writerr(colored('Unable to read FILTER_EXTENSIONS from config.yml - default set', 'red'))
                     FILTER_KEYWORDS = DEFAULT_FILTER_KEYWORDS
@@ -139,7 +156,7 @@ def getConfig():
                     FILTER_EXTENSIONS = config.get('FILTER_EXTENSIONS')
                     if str(FILTER_EXTENSIONS) == 'None':
                         writerr(colored('No value for FILTER_EXTENSIONS in config.yml - default set', 'yellow'))
-                        FILTER_EXTENSIONS = ''
+                        FILTER_EXTENSIONS = DEFAULT_FILTER_EXTENSIONS
                 except Exception as e:
                     writerr(colored('Unable to read FILTER_EXTENSIONS from config.yml - default set', 'red'))
                     FILTER_EXTENSIONS = DEFAULT_FILTER_EXTENSIONS
@@ -151,7 +168,7 @@ def getConfig():
                     LANGUAGE = config.get('LANGUAGE')
                     if str(LANGUAGE) == 'None':
                         writerr(colored('No value for LANGUAGE in config.yml - default set', 'yellow'))
-                        LANGUAGE = ''
+                        LANGUAGE = DEFAULT_LANGUAGE
                 except Exception as e:
                     writerr(colored('Unable to read LANGUAGE from config.yml - default set', 'red'))
                     LANGUAGE = DEFAULT_LANGUAGE
@@ -160,12 +177,28 @@ def getConfig():
                     reLangPart = re.compile(REGEX_START + '(' + LANGUAGE.replace(',','|') + ')' + REGEX_END)    
                 except Exception as e:
                     writerr(colored('ERROR getConfig 2: ' + str(e), 'red'))
+            
+            # If the user provided the --remove-params argument then it overrides the config value
+            if args.remove_params:
+                REMOVE_PARAMS = args.remove_params
+            else:    
+                try:
+                    REMOVE_PARAMS = config.get('REMOVE_PARAMS')
+                    if str(REMOVE_PARAMS) == 'None':
+                        if verbose():
+                            writerr(colored('No value for REMOVE_PARAMS in config.yml - default set', 'yellow'))
+                        REMOVE_PARAMS = DEFAULT_REMOVE_PARAMS
+                except Exception as e:
+                    if verbose():
+                        writerr(colored('Unable to read REMOVE_PARAMS from config.yml - default set', 'red'))
+                    REMOVE_PARAMS = DEFAULT_REMOVE_PARAMS
                     
         except:
             writerr(colored('WARNING: Cannot find config.yml, so using default values', 'yellow'))
             FILTER_EXTENSIONS = DEFAULT_FILTER_EXTENSIONS
             FILTER_KEYWORDS = DEFAULT_FILTER_KEYWORDS
             LANGUAGE = DEFAULT_LANGUAGE
+            REMOVE_PARAMS = DEFAULT_REMOVE_PARAMS
             
     except Exception as e:
         writerr(colored('ERROR getConfig 1: ' + str(e), 'red'))
@@ -358,6 +391,20 @@ def hasBadExtension(path: str) -> bool:
     except Exception as e:
         writerr(colored('ERROR hasBadExtension 1: ' + str(e), 'red'))
 
+def removeParameters(params) -> dict:
+    '''
+    Removes any parameters from the parameter dictionary
+    '''
+    global REMOVE_PARAMS
+    try:
+        # For every parameter name in the REMOVE_PARAMS list, remove from the dictionary passed
+        for param in REMOVE_PARAMS.split(','):
+            if param in params:
+                del params[param]
+        return params
+    except Exception as e:
+        writerr(colored('ERROR removeParameters 1: ' + str(e), 'red'))
+        
 def processUrl(line):
     
     try:
@@ -379,6 +426,9 @@ def processUrl(line):
         # Build the path and parameters
         path, params = parsed.path, paramsToDict(parsed.query)
 
+        # Remove any necessary parameters
+        params = removeParameters(params)
+        
         # If there is a fragment...
         #   if arg -fnp / --fragment-not-param was passed, change the path to include the hash,
         #   else, add as the last parameter with a name but with value {EMPTY} that doesn't add an = afterwards
@@ -396,7 +446,7 @@ def processUrl(line):
         if hasBadExtension(path):
             return
         
-        # If the are no parameters and path isn't empty
+        # If there are no parameters and path isn't empty
         if not params and path != "":
             
             # If its unwanted content or has a keyword to be excluded, then just return to continue with the next line
@@ -548,7 +598,7 @@ def processOutput():
         writerr(colored('ERROR processOutput 1: ' + str(e), 'red'))
 
 def showOptionsAndConfig():
-    global FILTER_EXTENSIONS, FILTER_KEYWORDS, LANGUAGE
+    global FILTER_EXTENSIONS, FILTER_KEYWORDS, LANGUAGE, REMOVE_PARAMS
     try:
         write(colored('Selected options and config:', 'cyan'))
         write(colored('-i: ' + args.input, 'magenta')+colored(' The input file of URLs to de-clutter.','white'))
@@ -570,6 +620,11 @@ def showOptionsAndConfig():
         if args.language:
             write(colored('Languages (from Config.yml): ', 'magenta')+colored(LANGUAGE,'white'))
             write(colored('-lang: True', 'magenta')+colored('If there are multiple URLs with different language codes as a part of the path, only one version of the URL will be output.','white'))
+
+        if args.remove_params:
+            write(colored('-rp (Params to Remove): ', 'magenta')+colored(args.remove_params,'white'))
+        else:
+            write(colored('Remove Params (from Config.yml): ', 'magenta')+colored(REMOVE_PARAMS,'white'))
             
         if args.keep_slash:
             write(colored('-ks: True', 'magenta')+colored('A trailing slash at the end of a URL in input will not be removed. Therefore there may be identical URLs output, one with and one without a trailing slash.','white'))
@@ -649,6 +704,13 @@ def main():
         metavar='<comma separated list>'
     )
     parser.add_argument(
+        '-rp',
+        '--remove-params',
+        action='store',
+        help='A comma separated list of case sensitive parameters to remove from all URLs. This will override the REMOVE_PARAMS list specified in config.yml. This can be useful for cache buster parameters for example.',
+        metavar='<comma separated list>'
+    )
+    parser.add_argument(
         '-ks',
         '--keep-slash',
         action='store_true',
@@ -694,9 +756,15 @@ def main():
         help='If passed, and there are multiple URLs with different language codes as a part of the path, only one version of the URL will be output. The codes are specified in the "LANGUAGE" section of "config.yml".',
     )
     parser.add_argument("-nb", "--no-banner", action="store_true", help="Hides the tool banner.")
+    parser.add_argument('--version', action='store_true', help="Show version number")
     parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output.')
     args = parser.parse_args()
 
+    # If --version was passed, display version and exit
+    if args.version:
+        write(colored('urless - v' + __version__,'cyan'))
+        sys.exit()
+        
     try:
         # If no input was given, raise an error
         if sys.stdin.isatty():
@@ -723,7 +791,14 @@ def main():
         
     except Exception as e:
         writerr(colored('ERROR main 1: ' + str(e), 'red'))      
-          
+
+    # Show ko-fi link if verbose and not piped
+    try:
+        if verbose() and sys.stdin.isatty():
+            writerr(colored('✅ Want to buy me a coffee? ☕ https://ko-fi.com/xnlh4ck3r 🤘', 'green'))
+    except:
+        pass
+    
     finally: # Clean up
         urlmap = None
         patternsSeen = None

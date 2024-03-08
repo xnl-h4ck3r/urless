@@ -4,8 +4,6 @@ import shutil
 from setuptools import setup, find_packages
 
 # Define the target directory for the config.yml file
-# target_directory = os.path.join(os.path.expanduser("~"), ".config", "urless") if os.path.expanduser("~") else None
-
 target_directory = (
                 os.path.join(os.getenv('APPDATA', ''), 'urless') if os.name == 'nt'
                 else os.path.join(os.path.expanduser("~"), ".config", "urless") if os.name == 'posix'
@@ -16,7 +14,16 @@ target_directory = (
 # Copy the config.yml file to the target directory if it exists
 if target_directory and os.path.isfile("config.yml"):
     os.makedirs(target_directory, exist_ok=True)
-    shutil.copy("config.yml", target_directory)
+    # If file already exists, create a new one
+    if os.path.isfile(target_directory+'/config.yml'):
+        configNew = True
+        os.rename(target_directory+'/config.yml',target_directory+'/config.yml.OLD')
+        shutil.copy("config.yml", target_directory)
+        os.rename(target_directory+'/config.yml',target_directory+'/config.yml.NEW')
+        os.rename(target_directory+'/config.yml.OLD',target_directory+'/config.yml')
+    else:
+        configNew = False
+        shutil.copy("config.yml", target_directory)
 
 setup(
     name="urless",
@@ -27,10 +34,13 @@ setup(
     author="@xnl-h4ck3r",
     url="https://github.com/xnl-h4ck3r/urless",
     zip_safe=False,
-    install_requires=["argparse", "pyyaml", "termcolor", "urlparse3", "chardet"],
+    install_requires=["argparse", "pyyaml", "termcolor", "urlparse3", "chardet", "requests"],
     entry_points={
         'console_scripts': [
             'urless = urless.urless:main',
         ],
     },
 )
+
+if configNew:
+    print('\n\033[33mIMPORTANT: The file '+target_directory+'/config.yml already exists.\nCreating config.yml.NEW but leaving existing config.\nIf you need the new file, then remove the current one and rename config.yml.NEW to config.yml\n\033[0m')

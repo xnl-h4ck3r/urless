@@ -1,5 +1,19 @@
 ## Changelog
 
+- v2.0
+
+  - New
+
+    - Add `REMOVE_PARAMS` to `config.yml`. This will be a comma separated list of case sensitive parameter names that you want removed completely from URLs. This can be useful to remove cache buster parameters, so will default to `cachebuster,cacheBuster` to show examples.
+    - Add arg `-rp`/`--remove-params` which can be used to pass a comma separated list of parameter names to remove from URLs. This will override the `REMOVE_PARAMS` list in `config.yml`.
+    - Show the current version of the tool in the banner, and whether it is the latest, or outdated.
+    - Add arg `--version` to show the current version of the tool.
+    - When installing `urless`, if the `config.yml` already exists then it will keep that one and create `config.yml.NEW` in case you need to replace the old config.
+
+  - Changed
+
+    - Fix a bug that meant defaults were not set correctly if `config.yml` keys are missing.
+
 - v1.3
 
   - New

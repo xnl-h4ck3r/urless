@@ -1,6 +1,6 @@
 <center><img src="https://github.com/xnl-h4ck3r/urless/blob/main/urless/images/title.png"></center>
 
-## About - v1.3
+## About - v2.0
 
 This is a tool used to de-clutter a list of URLs.
 As a starting point, I took the amazing tool [uro](https://github.com/s0md3v/uro/) by Somdev Sangwan. But I wanted to change a few things, make some improvements (like deal with GUIDs) and make it more customizable.
@@ -31,6 +31,7 @@ pipx install git+https://github.com/xnl-h4ck3r/urless.git
 | -o       | --output             | The output file that will contain the de-cluttered list of URLs (default: output.txt). If piped to another program, output will be written to STDOUT instead.                                                                                                                                                                                                                                                   |
 | -fk      | --filter-keywords    | A comma separated list of keywords to exclude links (if there no parameters). This will override the `FILTER_KEYWORDS` list specified in config.yml                                                                                                                                                                                                                                                             |
 | -fe      | --filter-extensions  | A comma separated list of file extensions to exclude. This will override the `FILTER_EXTENSIONS` list specified in `config.yml`                                                                                                                                                                                                                                                                                 |
+| -rp      | --remove-params      | A comma separated list of **case senistive** parameters to remove from ALL URLs. This will override the `REMOVE_PARAMS` list specified in `config.yml`. This can be useful to remove cache buster parameters for example.\*\*                                                                                                                                                                                   |
 | -ks      | --keep-slash         | A trailing slash at the end of a URL in input will not be removed. Therefore there may be identical URLs output, one with and one without a trailing slash.                                                                                                                                                                                                                                                     |
 | -khw     | --keep-human-written | By default, any URL with a path part that contains 3 or more dashes (-) are removed because it is assumed to be human written content (e.g. blog post), and not interesting. Passing this argument will keep them in the output.                                                                                                                                                                                |
 | -kym     | --keep-yyyymm        | By default, any URL with a path containing 3 /YYYY/MM (where YYYY is a year and MM month) are removed because it is assumed to be blog/news content, and not interesting. Passing this argument will keep them in the output.                                                                                                                                                                                   |
@@ -39,6 +40,7 @@ pipx install git+https://github.com/xnl-h4ck3r/urless.git
 | -fnp     | --fragment-not-param | Don't treat URL fragments `#` in the same way as parameters, e.g. if a link has a filter keyword and a fragment (or param) the link is usually kept, but if this argument is passed and a link has a filter word and fragment, the link will be removed. Also, if this arg is passed and `-iq` / `--ignore-querystring` is used, the fragment will NOT be removed from links if no query string is in the link. |
 | -lang    | --language           | If passed and there are multiple URLs with different language codes as a part of the path, only one version of the URL will be output. The codes are specified in the `LANGUAGE` section of `config.yml`.                                                                                                                                                                                                       |
 | -nb      | --no-banner          | Hides the tool banner (it is hidden by default if you pipe input to urless) output.                                                                                                                                                                                                                                                                                                                             |
+|          | --version            | Show current version number.                                                                                                                                                                                                                                                                                                                                                                                    |
 | -v       | --verbose            | Verbose output                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ## What does it do exactly?
@@ -50,7 +52,7 @@ I'll explain this below, but first here are some terms that will be used:
 - **FILTER-KEYWORDS**: This refers to the list of keywords that can either be passed with `-fk`, specified with `FILTER_KEYWORDS` in the `config.yml`, or if neither of those exist, a default list of `blog,article,news,bootstrap,jquery,captcha,node_modules`
 - **LANGUAGE**: This refers to the list of language codes that can be specified with `LANGUAGE` in the `config.yml`, or if it doesn't exist, a default list of the most common codes `en,en-us,en-gb,fr,de,pl,nl,fi,sv,it,es,pt,ru,pt-br,es-mx,zh-tw,js.ko`
 - **UNWANTED-CONTENT**:
-  - A section of the URL path contains more than 3 dashes (`-`), BUT isn't a GUID. This implies human written content, e.g. `how-to-hack-the-planet`). If arg `-khw` is passed, then this won't be removed.
+  - A section of the URL path contains more than 3 dashes (`-`), BUT isn't a GUID. This implies human written content, e.g. `how-to-hack-the-planet`. If arg `-khw` is passed, then this won't be removed.
   - The URL contains `/YYYY/MM/` , e.g. a year, month . This is usually static content such as a blog. If arg `-kym` is passed, then this won't be removed.
 
 Here's what happens:
@@ -59,6 +61,7 @@ Here's what happens:
 - If the URL has any **FILTER-EXTENSIONS**, it will be removed from the output.
 - If the URL has NO parameters:
   - If the URL contains a **FILTER-KEYWORDS** or **UNWANTED-CONTENT**, it will be removed.
+  - if the URL query string contains unwanted parameters specified in config `REMOVE_PARAMS` (or overridden wit argument `-rp`/`--remove-params`), they will be removed from all URLs before processing.
   - If `-rcid`/`--regex-custom-id` is passed and the URL path contains a Custom ID, only one match to the Custom ID regex will be included if there are multiple URLs where that is the only difference.
   - If the URL path contains a GUID, only one of the GUIDs will be included if there are multiple URLs where the GUID is the only difference.
   - If the URL path contains an Integer ID, only one of the Integer IDs will be included if there are multiple URLs where the Integer ID is the only difference.
@@ -100,6 +103,7 @@ The `config.yml` file has the keys which can be updated to suit your needs:
 - `FILTER_KEYWORDS` - A comma separated list of keywords (e.g. `blog,article,news` etc.) that URLs are checked against in certain circumstances.
 - `FILTER_EXTENSIONS` - A comma separated list of file extensions (e.g. `.css,.jpg,.jpeg` etc.) that all URLs are checked against. If a URL includes any of the strings then it will be excluded from the output.
 - `LANGUAGE` - A comma separated list of language codes (e.g. `en-gb,fr,nl` etc.) that all URLs are checked against when the `-lang` argument is passed. If there are multiple URLs with different language codes, only one version of the URL will be output.
+- `REMOVE_PARAMS` - A comma separated list of **case sensitive** parameter names (e.g. `cachebuster,cacheBuster`) that will be removed from all URLs before processing.
 
 ## Custom Regex
 
