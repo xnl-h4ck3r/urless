@@ -12,7 +12,7 @@ As a starting point, I took the amazing tool [uro](https://github.com/s0md3v/uro
 Install `urless` in default(global) python environment.
 
 ```bash
-$ pip install git+https://github.com/xnl-h4ck3r/urless.git
+pip install git+https://github.com/xnl-h4ck3r/urless.git -v
 ```
 
 ### pipx
