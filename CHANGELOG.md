@@ -1,5 +1,12 @@
 ## Changelog
 
+- v2.1
+
+  - New
+
+    - Add `long_description_content_type` to `setup.py` to upload to PyPi
+    - Add `urless` to `PyPi` so can be installed with `pip install urless`
+
 - v2.0
 
   - New
