@@ -67,6 +67,7 @@ patternsSeen = []
 outFile = None
 linesOrigCount = 0
 linesFinalCount = 0
+usingConfigDefaults = False
 
 def verbose():
     '''
@@ -115,7 +116,7 @@ def getConfig():
     '''
     Try to get the values from the config file, otherwise use the defaults
     '''
-    global FILTER_EXTENSIONS, FILTER_KEYWORDS, LANGUAGE, REMOVE_PARAMS, reLangPart
+    global FILTER_EXTENSIONS, FILTER_KEYWORDS, LANGUAGE, REMOVE_PARAMS, reLangPart, usingConfigDefaults
     try:
 
         # Try to get the config file values
@@ -129,10 +130,13 @@ def getConfig():
             )
 
             urlessPath.absolute
-            if urlessPath == '':
-                configPath = 'config.yml'
+            if args.config is None:
+                if urlessPath == '':
+                    configPath = 'config.yml'
+                else:
+                    configPath = Path(urlessPath / 'config.yml')
             else:
-                configPath = Path(urlessPath / 'config.yml')
+                configPath = Path(args.config)
             config = yaml.safe_load(open(configPath))
             
             # If the user provided the --filter-extensions argument then it overrides the config value
@@ -193,8 +197,12 @@ def getConfig():
                         writerr(colored('Unable to read REMOVE_PARAMS from config.yml - default set', 'red'))
                     REMOVE_PARAMS = DEFAULT_REMOVE_PARAMS
                     
-        except:
-            writerr(colored('WARNING: Cannot find config.yml, so using default values', 'yellow'))
+        except Exception as e:
+            if args.config is None:
+                writerr(colored('WARNING: Cannot find file "config.yml", so using default values', 'yellow'))
+            else:
+                writerr(colored('WARNING: Cannot find file "' + args.config + '", so using default values', 'yellow'))
+            usingConfigDefaults = True
             FILTER_EXTENSIONS = DEFAULT_FILTER_EXTENSIONS
             FILTER_KEYWORDS = DEFAULT_FILTER_KEYWORDS
             LANGUAGE = DEFAULT_LANGUAGE
@@ -446,8 +454,8 @@ def processUrl(line):
         if hasBadExtension(path):
             return
         
-        # If there are no parameters and path isn't empty
-        if not params and path != "":
+        # If there are no parameters (or the --disregard-params argument was passed) and path isn't empty
+        if (not params or args.disregard_params) and path != "":
             
             # If its unwanted content or has a keyword to be excluded, then just return to continue with the next line
             if isUnwantedContent(path) or hasFilterKeyword(path):
@@ -598,7 +606,7 @@ def processOutput():
         writerr(colored('ERROR processOutput 1: ' + str(e), 'red'))
 
 def showOptionsAndConfig():
-    global FILTER_EXTENSIONS, FILTER_KEYWORDS, LANGUAGE, REMOVE_PARAMS
+    global FILTER_EXTENSIONS, FILTER_KEYWORDS, LANGUAGE, REMOVE_PARAMS, usingConfigDefaults
     try:
         write(colored('Selected options and config:', 'cyan'))
         write(colored('-i: ' + args.input, 'magenta')+colored(' The input file of URLs to de-clutter.','white'))
@@ -606,7 +614,16 @@ def showOptionsAndConfig():
             write(colored('-o: ' + args.output, 'magenta')+colored(' The output file that the de-cluttered URL list will be written to.','white'))
         else:
             write(colored('-o: <STDOUT>', 'magenta')+colored(' An output file wasn\'t given, so output will be written to STDOUT.','white'))
+        
+        if args.disregard_params:
+            write(colored('-dp: True', 'magenta')+colored(' When filtering the URLs, they will not be treated differently just because they have parameters.','white'))
             
+        if args.config:
+            if usingConfigDefaults:
+                write(colored('-config: ' + args.config, 'magenta')+colored(' The path of the YML config file.','white')+colored(' WARNING: Not found, so using default values.','yellow'))
+            else:
+                write(colored('-config: ' + args.config, 'magenta')+colored(' The path of the YML config file.','white'))
+
         if args.filter_keywords:
             write(colored('-fk (Keywords to Filter): ', 'magenta')+colored(args.filter_keywords,'white'))
         else:
@@ -720,13 +737,13 @@ def main():
         '-khw',
         '--keep-human-written',
         action='store_true',
-        help='By default, any URL with a path part that contains 3 or more dashes (-) are removed because it is assumed to be human written content (e.g. blog post) and not interesting. Passing this argument will keep them in the output.',
+        help='By default, any URL with a path part that contains more than 3 dashes (-) are removed because it is assumed to be human written content (e.g. blog post) and not interesting. Passing this argument will keep them in the output.',
     )
     parser.add_argument(
         '-kym',
         '--keep-yyyymm',
         action='store_true',
-        help='By default, any URL with a path containing 3 /YYYY/MM (where YYYY is a year and MM month) are removed because it is assumed to be blog/news content, and not interesting. Passing this argument will keep them in the output.',
+        help='By default, any URL with a path containing /YYYY/MM (where YYYY is a year and MM month) are removed because it is assumed to be blog/news content, and not interesting. Passing this argument will keep them in the output.',
     )
     parser.add_argument(
         '-rcid',
@@ -754,6 +771,18 @@ def main():
         '--language',
         action='store_true',
         help='If passed, and there are multiple URLs with different language codes as a part of the path, only one version of the URL will be output. The codes are specified in the "LANGUAGE" section of "config.yml".',
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        action="store",
+        help="Path to the YML config file. If not passed, it looks for file 'config.yml' in the default config directory, e.g. '~/.config/urless/'.",
+    )
+    parser.add_argument(
+        "-dp",
+        "--disregard-params",
+        action="store_true",
+        help="There is certain filtering that is not done if the URLs have parameters, because by default we want to see all possible parameters. If this argument is passed, then the filtering will be done, regardless of the existence of any parameters.",
     )
     parser.add_argument("-nb", "--no-banner", action="store_true", help="Hides the tool banner.")
     parser.add_argument('--version', action='store_true', help="Show version number")

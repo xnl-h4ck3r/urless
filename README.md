@@ -1,6 +1,6 @@
 <center><img src="https://github.com/xnl-h4ck3r/urless/blob/main/urless/images/title.png"></center>
 
-## About - v2.1
+## About - v2.2
 
 This is a tool used to de-clutter a list of URLs.
 As a starting point, I took the amazing tool [uro](https://github.com/s0md3v/uro/) by Somdev Sangwan. But I wanted to change a few things, make some improvements (like deal with GUIDs) and make it more customizable.
@@ -45,12 +45,14 @@ pipx install git+https://github.com/xnl-h4ck3r/urless.git
 | -fe      | --filter-extensions  | A comma separated list of file extensions to exclude. This will override the `FILTER_EXTENSIONS` list specified in `config.yml`                                                                                                                                                                                                                                                                                 |
 | -rp      | --remove-params      | A comma separated list of **case senistive** parameters to remove from ALL URLs. This will override the `REMOVE_PARAMS` list specified in `config.yml`. This can be useful to remove cache buster parameters for example.\*\*                                                                                                                                                                                   |
 | -ks      | --keep-slash         | A trailing slash at the end of a URL in input will not be removed. Therefore there may be identical URLs output, one with and one without a trailing slash.                                                                                                                                                                                                                                                     |
-| -khw     | --keep-human-written | By default, any URL with a path part that contains 3 or more dashes (-) are removed because it is assumed to be human written content (e.g. blog post), and not interesting. Passing this argument will keep them in the output.                                                                                                                                                                                |
-| -kym     | --keep-yyyymm        | By default, any URL with a path containing 3 /YYYY/MM (where YYYY is a year and MM month) are removed because it is assumed to be blog/news content, and not interesting. Passing this argument will keep them in the output.                                                                                                                                                                                   |
+| -khw     | --keep-human-written | By default, any URL with a path part that contains more than 3 dashes (-) are removed because it is assumed to be human written content (e.g. blog post), and not interesting. Passing this argument will keep them in the output.                                                                                                                                                                              |
+| -kym     | --keep-yyyymm        | By default, any URL with a path containing /YYYY/MM (where YYYY is a year and MM month) are removed because it is assumed to be blog/news content, and not interesting. Passing this argument will keep them in the output.                                                                                                                                                                                     |
 | -rcid    | --regex-custom-id    | **USE WITH CAUTION!** Regex for a Custom ID that your target uses. Ensure the value is passed in quotes. See the section below for more details on this.                                                                                                                                                                                                                                                        |
 | -iq      | --ignore-querystring | Remove the query string (including URL fragments `#`) so output is unique paths only.                                                                                                                                                                                                                                                                                                                           |
 | -fnp     | --fragment-not-param | Don't treat URL fragments `#` in the same way as parameters, e.g. if a link has a filter keyword and a fragment (or param) the link is usually kept, but if this argument is passed and a link has a filter word and fragment, the link will be removed. Also, if this arg is passed and `-iq` / `--ignore-querystring` is used, the fragment will NOT be removed from links if no query string is in the link. |
 | -lang    | --language           | If passed and there are multiple URLs with different language codes as a part of the path, only one version of the URL will be output. The codes are specified in the `LANGUAGE` section of `config.yml`.                                                                                                                                                                                                       |
+| -c       | --config             | Path to the YML config file. If not passed, it looks for file `config.yml` in the default config directory, e.g. `~/.config/urless/`.                                                                                                                                                                                                                                                                           |
+| -dp      | --disregard-params   | There is certain filtering that is not done if the URLs have parameters, because by default we want to see all possible parameters. If this argument is passed, then the filtering will be done, regardless of the existence of any parameters.                                                                                                                                                                 |
 | -nb      | --no-banner          | Hides the tool banner (it is hidden by default if you pipe input to urless) output.                                                                                                                                                                                                                                                                                                                             |
 |          | --version            | Show current version number.                                                                                                                                                                                                                                                                                                                                                                                    |
 | -v       | --verbose            | Verbose output                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -71,14 +73,14 @@ Here's what happens:
 
 - If a URL has port 80 or 443 explicitly given, then remove it from the URL (e.g. http://example.com:80/test -> http://example.com/test)
 - If the URL has any **FILTER-EXTENSIONS**, it will be removed from the output.
-- If the URL has NO parameters:
+- If the URL has NO parameters **OR** the `-dp`/`--disregard-params` argument was passed:
   - If the URL contains a **FILTER-KEYWORDS** or **UNWANTED-CONTENT**, it will be removed.
   - if the URL query string contains unwanted parameters specified in config `REMOVE_PARAMS` (or overridden wit argument `-rp`/`--remove-params`), they will be removed from all URLs before processing.
   - If `-rcid`/`--regex-custom-id` is passed and the URL path contains a Custom ID, only one match to the Custom ID regex will be included if there are multiple URLs where that is the only difference.
   - If the URL path contains a GUID, only one of the GUIDs will be included if there are multiple URLs where the GUID is the only difference.
   - If the URL path contains an Integer ID, only one of the Integer IDs will be included if there are multiple URLs where the Integer ID is the only difference.
   - If the `-lang` argument is passed and the URL contains a language code (e.g. `en-gb`), only one of the language codes will be included if there are multiple URLs where the language code is different.
-- Else the URL has Parameters (or a fragment `#`):
+- Else the URL has Parameters (or a fragment `#`) **AND** the `-dp`/`--disregard-params` argument was NOT passed:
   - If there are multiple URLs with the same parameters, then only URLs with unique parameter values are included.
   - If there are URL's with a Parameter, but no value (or a fragment), then this will be included.
 
@@ -153,7 +155,7 @@ If you come across any problems at all, or have ideas for improvements, please f
 
 ## TODO
 
-- Allow `-rcid`/`--regex-custom-id` argument to take multiple regex strings
+None - feel free to raise a Github issue to suggest any enhancements.
 
 ## And finally...
 

@@ -1,5 +1,17 @@
 ## Changelog
 
+- v2.2
+
+  - New
+
+    - Add argument `-c`/`--config` to specify a path to a custom `config.yml` file. This resolves [Issue 9](https://github.com/xnl-h4ck3r/urless/issues/9).
+    - Add argument `-dp`/`--disregard-params`. There is certain filtering that is not done if the URLs have parameters, because by default we want to see all possible parameters. If this argument is passed, then the filtering will be done, regardless of the existence of any parameters. This resolves [Issue 11](https://github.com/xnl-h4ck3r/urless/issues/11) and [Issue 12](https://github.com/xnl-h4ck3r/urless/issues/12).
+
+  - Changed
+
+    - The description for argument `-khw`/`--keep-human-written` says `By default, any URL with a path part that contains 3 or more dashes (-) are removed` but this will be corrected to `contains more than 3 dashes`.
+    - Correct the description for argument `-kym`/`--keep-yyyymm` on the `-h` output and `README.md`. It says `By default, any URL with a path containing 3 /YYYY/MM` but the `3` should be removed.
+
 - v2.1
 
   - New
