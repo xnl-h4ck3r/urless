@@ -99,7 +99,7 @@ def showVersion():
             resp = requests.get('https://raw.githubusercontent.com/xnl-h4ck3r/urless/main/urless/__init__.py',timeout=3)
         except:
             write('Current urless version '+__version__+' (unable to check if latest)\n')
-        if __version__ == resp.text.split('=')[1].replace('"',''):
+        if __version__ == resp.text.split('"')[1]:
             write('Current urless version '+__version__+' ('+colored('latest','green')+')\n')
         else:
             write('Current urless version '+__version__+' ('+colored('outdated','red')+')\n')
